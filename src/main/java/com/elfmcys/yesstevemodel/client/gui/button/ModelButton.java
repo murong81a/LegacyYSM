@@ -101,6 +101,8 @@ public class ModelButton extends Button {
         // 玩家模型
         GlStateManager.enableDepth();
         RenderUtil.scissor(this.xPosition, this.yPosition, this.width, this.height - 20);
+        // 清掉深度缓冲，避免世界深度（或光影的深度附件）把 GUI 里的模型裁掉
+        GlStateManager.clear(GL11.GL_DEPTH_BUFFER_BIT);
         RenderUtil.renderEntityInInventory(this.xPosition + this.width / 2, this.yPosition + this.height / 2 + 20, 30, mc.player, this.modelInfo.getLeft(), this.modelInfo.getRight().get(0), custom -> {
             if (!this.previewAnimation.isEmpty() && !custom.hasPreviewAnimation(this.previewAnimation)) {
                 custom.setPreviewAnimation(this.previewAnimation);
@@ -147,7 +149,8 @@ public class ModelButton extends Button {
                 this.drawTexturedModalRect(this.xPosition + this.width - 14, this.yPosition, 16, 0, 16, 16);
             }
         });
-        GlStateManager.enableDepth();
+        // GUI 必须保持深度测试关闭，否则后面的控件和世界深度一起判深度
+        GlStateManager.disableDepth();
     }
 
     public void renderComponentTooltip(Screen screen, int pMouseX, int pMouseY) {

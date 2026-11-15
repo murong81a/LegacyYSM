@@ -173,6 +173,8 @@ public abstract class GeoReplacedEntityRenderer<T extends EntityLivingBase, E ex
         GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
         GlStateManager.enableCull();
         GlStateManager.popMatrix();
+        // 模型渲染会把颜色留在 GL 状态里，不复位会让后续 GUI/世界整体偏色（比如发绿）
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 
         // 嗯...TLM 这么实现，一定有它的道理吧
         if (this.renderManager.renderViewEntity != null) {

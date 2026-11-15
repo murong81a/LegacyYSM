@@ -16,6 +16,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.gui.inventory.GuiInventory;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.SoundEvents;
@@ -207,7 +208,12 @@ public class PlayerModelScreen extends Screen {
 
         this.textField.drawTextBox();
         RenderUtil.scissor(this.x + 5, this.y + 29, 125, 171);
+        // 清深度并复位颜色：否则世界深度（含光影的深度附件）会把预览裁掉，模型颜色也会漏到 GUI 上
+        GlStateManager.clear(GL11.GL_DEPTH_BUFFER_BIT);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         GuiInventory.drawEntityOnScreen(this.x + 67, this.y + 195, 64, this.x + 67 - mouseX, this.y + 190 - 95 - mouseY, this.player);
+        GlStateManager.disableDepth();
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         GL11.glDisable(GL11.GL_SCISSOR_TEST);
 
         CapabilityEvent.getModelInfoCap(this.player).ifPresent(cap -> {
