@@ -1,5 +1,6 @@
 package com.elfmcys.yesstevemodel.client.event;
 
+import com.elfmcys.yesstevemodel.client.ClientModelManager;
 import com.elfmcys.yesstevemodel.client.ClientProxy;
 import com.elfmcys.yesstevemodel.client.config.GeneralConfig;
 import com.elfmcys.yesstevemodel.client.entity.CustomPlayerEntity;
@@ -37,7 +38,7 @@ public class ReplacePlayerHandRenderEvent {
             try {
                 animatable = AnimatableCacheUtil.ANIMATABLE_CACHE.get(modelId, () -> {
                     CustomPlayerEntity entity = new CustomPlayerEntity(null);
-                    entity.setTextureLocation(cap.getSelectTexture());
+                    entity.setTextureLocation(ClientModelManager.resolveTexture(cap.getModelId(), cap.getSelectTexture()));
                     return entity;
                 });
             } catch (ExecutionException e) {
@@ -46,7 +47,7 @@ public class ReplacePlayerHandRenderEvent {
 
             if (animatable instanceof CustomPlayerEntity customPlayer) {
                 customPlayer.setModelLocation(ModelIdUtil.getArmId(modelId));
-                customPlayer.setTextureLocation(cap.getSelectTexture());
+                customPlayer.setTextureLocation(ClientModelManager.resolveTexture(modelId, cap.getSelectTexture()));
                 if (!customPlayer.updateModel()) {
                     return;
                 }

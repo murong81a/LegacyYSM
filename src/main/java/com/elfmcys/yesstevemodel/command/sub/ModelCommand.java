@@ -101,7 +101,7 @@ public class ModelCommand extends CommandBase {
         if (!info.getTexture().isPresent()) return;
 
         ResourceLocation modelId = new ResourceLocation(YesSteveModel.MOD_ID, modelName);
-        ResourceLocation textureId = ModelIdUtil.getSubModelId(modelId, textureName);
+        ResourceLocation textureId = ModelIdUtil.getSubModelId(modelId, this.resolveTextureName(info, modelName, textureName));
 
         if (ignoreAuth) {
             targets.forEach(player -> CapabilityEvent.getModelInfoCap(player).ifPresent(cap -> {
@@ -123,6 +123,43 @@ public class ModelCommand extends CommandBase {
                                 modelName, player.getName());
                     }
                 })));
+    }
+
+    /**
+     * 把命令里手输的贴图名归一化成模型真实存在的贴图文件名（带 .png）。
+     * <p>
+     * 支持 {@code skin}、{@code skin.png}、{@code wine_fox/skin}、
+     * {@code yes_steve_model:wine_fox/skin.png} 等写法。找不到时退回模型自带的贴图，
+     * 避免客户端拿到一个从未注册过的 id 后把模型渲染成缺失贴图（紫黑格）。
+     */
+    private String resolveTextureName(ServerModelInfo info, String modelName, String textureName) {
+        String name = textureName == null ? "" : textureName;
+        int colon = name.indexOf(':');
+        if (colon >= 0) {
+            name = name.substring(colon + 1);
+        }
+        String prefix = modelName + "/";
+        while (name.startsWith(prefix)) {
+            name = name.substring(prefix.length());
+        }
+        if (!name.endsWith(".png")) {
+            name = name + ".png";
+        }
+        if (info.getTextures().contains(name)) {
+            return name;
+        }
+        // 找不到时按常见默认名回退，最后才退回集合里的第一个非箭矢贴图
+        for (String fallback : new String[]{"skin.png", "default.png"}) {
+            if (info.getTextures().contains(fallback)) {
+                return fallback;
+            }
+        }
+        for (String texture : info.getTextures()) {
+            if (!FormatManager.ARROW_TEXTURE_FILE_NAME.equals(texture)) {
+                return texture;
+            }
+        }
+        return info.getTexture().orElse(name);
     }
 
     private void exportAllPackInfo(ICommandSender sender) {

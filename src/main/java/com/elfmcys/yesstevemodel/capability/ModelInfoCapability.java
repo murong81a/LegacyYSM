@@ -2,6 +2,7 @@ package com.elfmcys.yesstevemodel.capability;
 
 import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.elfmcys.yesstevemodel.config.ServerConfig;
+import com.elfmcys.yesstevemodel.util.ModelIdUtil;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
@@ -19,8 +20,30 @@ public class ModelInfoCapability {
 
     public void setModelAndTexture(ResourceLocation modelId, ResourceLocation selectTexture) {
         this.modelId = modelId;
-        this.selectTexture = selectTexture;
+        this.selectTexture = normalizeTextureId(modelId, selectTexture);
         this.markDirty();
+    }
+
+    /**
+     * 兼容历史存档/手输命令产生的非标准贴图 id，统一成 {@code <model>/<file>.png} 形式。
+     * <p>
+     * 例如 {@code wine_fox/skin} -> {@code wine_fox/skin.png}、
+     * {@code wine_fox/wine_fox/skin} -> {@code wine_fox/skin.png}。
+     * 无法确认存在时保持归一化结果，渲染侧还会用 {@code ClientModelManager.resolveTexture} 再兜底一次。
+     */
+    private static ResourceLocation normalizeTextureId(ResourceLocation modelId, @Nullable ResourceLocation textureId) {
+        if (modelId == null || textureId == null) {
+            return new ResourceLocation(YesSteveModel.MOD_ID, ServerConfig.DEFAULT_MODEL_ID + "/" + ServerConfig.DEFAULT_MODEL_TEXTURE);
+        }
+        String path = textureId.getResourcePath();
+        String prefix = modelId.getResourcePath() + "/";
+        while (path.startsWith(prefix)) {
+            path = path.substring(prefix.length());
+        }
+        if (!path.endsWith(".png")) {
+            path = path + ".png";
+        }
+        return ModelIdUtil.getSubModelId(modelId, path);
     }
 
     public void copyFrom(ModelInfoCapability source) {
@@ -40,7 +63,7 @@ public class ModelInfoCapability {
     }
 
     public void setSelectTexture(ResourceLocation selectTexture) {
-        this.selectTexture = selectTexture;
+        this.selectTexture = normalizeTextureId(this.modelId, selectTexture);
         this.markDirty();
     }
 
@@ -86,7 +109,7 @@ public class ModelInfoCapability {
 
     public void deserializeNBT(NBTTagCompound nbt) {
         this.modelId = new ResourceLocation(nbt.getString("model_id"));
-        this.selectTexture = new ResourceLocation(nbt.getString("select_texture"));
+        this.selectTexture = normalizeTextureId(this.modelId, new ResourceLocation(nbt.getString("select_texture")));
         this.animation = nbt.getString("animation");
         this.playAnimation = nbt.getBoolean("play_animation");
     }

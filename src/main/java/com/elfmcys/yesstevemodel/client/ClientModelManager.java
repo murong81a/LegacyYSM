@@ -126,9 +126,35 @@ public class ClientModelManager {
     private static void registerTexture(ResourceLocation textureId, byte[] data) {
         // 确保主线程上传
         final Minecraft mc = Minecraft.getMinecraft();
+        // 已经在客户端主线程时直接上传，避免"先 bindTexture 未命中 -> 渲染成缺失贴图"的一帧闪烁
+        if ("Client thread".equals(Thread.currentThread().getName())) {
+            mc.getTextureManager().loadTexture(textureId, new OuterFileTexture(data));
+            return;
+        }
         mc.addScheduledTask(() -> {
             mc.getTextureManager().loadTexture(textureId, new OuterFileTexture(data));
         });
+    }
+
+    /**
+     * 把能力里保存的贴图 id 归一化成当前模型真正注册过的 id。
+     * <p>
+     * 命令手输（/ysm model set ... skin）、旧存档 NBT、模型尚未同步完成等情况下，
+     * select_texture 可能是一个从未注册到 TextureManager 的 id，此时 bindTexture 会回落到
+     * 原版缺失贴图（紫黑格）。这里统一兜底成该模型的第一张已注册贴图。
+     *
+     * @return 归一化后的贴图 id；模型还没注册时原样返回，交由调用方处理
+     */
+    @Nullable
+    public static ResourceLocation resolveTexture(ResourceLocation modelId, @Nullable ResourceLocation textureId) {
+        List<ResourceLocation> textures = MODELS.get(modelId);
+        if (textures == null || textures.isEmpty()) {
+            return textureId;
+        }
+        if (textureId != null && textures.contains(textureId)) {
+            return textureId;
+        }
+        return textures.get(0);
     }
 
     private static void registerAnimations(ResourceLocation mainId, Map<String, byte[]> mapData) {

@@ -1,5 +1,6 @@
 package com.elfmcys.yesstevemodel.client.renderer;
 
+import com.elfmcys.yesstevemodel.client.ClientModelManager;
 import com.elfmcys.yesstevemodel.client.entity.CustomPlayerEntity;
 import com.elfmcys.yesstevemodel.client.renderer.layer.CustomPlayerElytraLayer;
 import com.elfmcys.yesstevemodel.client.renderer.layer.CustomPlayerItemInHandLayer;
@@ -25,7 +26,7 @@ public class CustomPlayerRenderer extends GeoReplacedEntityRenderer<EntityPlayer
         CustomPlayerEntity animatable = this.getAnimatableEntity(entity);
         CapabilityEvent.getModelInfoCap(entity).ifPresent(cap -> {
             animatable.setModelLocation(ModelIdUtil.getMainId(cap.getModelId()));
-            animatable.setTextureLocation(cap.getSelectTexture());
+            animatable.setTextureLocation(ClientModelManager.resolveTexture(cap.getModelId(), cap.getSelectTexture()));
         });
         if (MinecraftForge.EVENT_BUS.post(new SpecialPlayerRenderEvent(entity, animatable, ModelIdUtil.getModelIdFromMainId(animatable.getModelLocation())))) {
             return;
