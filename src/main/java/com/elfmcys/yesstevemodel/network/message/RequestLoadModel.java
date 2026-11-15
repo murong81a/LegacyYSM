@@ -1,5 +1,6 @@
 package com.elfmcys.yesstevemodel.network.message;
 
+import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.elfmcys.yesstevemodel.client.ClientModelManager;
 import com.elfmcys.yesstevemodel.data.EncryptTools;
 import com.elfmcys.yesstevemodel.data.ModelData;
@@ -36,7 +37,8 @@ public class RequestLoadModel implements IPacketBufferMessage {
 
     @Override
     public void fromBytes(PacketBuffer buf) {
-        this.fileName = buf.readString(Short.MAX_VALUE);
+        // 文件名只可能是 32 位 md5，限制长度避免恶意包撑爆字符串
+        this.fileName = buf.readString(256);
     }
 
     public static class Handler implements IMessageHandler<RequestLoadModel, IMessage> {
@@ -52,30 +54,53 @@ public class RequestLoadModel implements IPacketBufferMessage {
         @SideOnly(Side.CLIENT)
         private static void handleClient(RequestLoadModel message) {
             Minecraft.getMinecraft().addScheduledTask(() -> {
+                if (!isValidFileName(message.fileName)) {
+                    YesSteveModel.LOGGER.warn("YSM: 服务端下发了非法模型文件名 {}，已拒绝", message.fileName);
+                    return;
+                }
                 ClientModelManager.CACHE_MD5.add(message.fileName);
                 loadModel(message.fileName);
             });
         }
     }
 
+    /**
+     * 服务端只会下发缓存文件的 32 位大写 md5；其它形式一律视为非法输入，
+     * 避免 {@code CACHE_CLIENT.resolve(fileName)} 被 {@code ../} 穿越读取本地任意文件。
+     */
+    @SideOnly(Side.CLIENT)
+    private static boolean isValidFileName(String fileName) {
+        return fileName != null && fileName.matches("[0-9A-F]{32}");
+    }
+
     @SideOnly(Side.CLIENT)
     public static void loadModel(String fileName) {
+        if (!isValidFileName(fileName)) {
+            YesSteveModel.LOGGER.warn("YSM: 拒绝加载非法模型文件名 {}", fileName);
+            return;
+        }
         ThreadTools.THREAD_POOL.submit(() -> {
             try {
-                while (ClientModelManager.PASSWORD == null) {
-                    Thread.sleep(500);
+                // 有超时的等待：非 YSM 服务器 / 密码包丢失时不再永久占用线程池线程
+                if (!ThreadTools.awaitUntil(() -> ClientModelManager.PASSWORD != null,
+                        ThreadTools.DEFAULT_WAIT_TIMEOUT_MS)) {
+                    YesSteveModel.LOGGER.warn("YSM: 等待服务器密码超时（{} ms），跳过模型 {}",
+                            ThreadTools.DEFAULT_WAIT_TIMEOUT_MS, fileName);
+                    return;
                 }
-                if (Minecraft.getMinecraft().player != null) {
-                    UUID uuid = Minecraft.getMinecraft().player.getUniqueID();
-                    Path modelFile = ServerModelManager.CACHE_CLIENT.resolve(fileName);
-                    byte[] fileBytes = FileUtils.readFileToByteArray(modelFile.toFile());
-                    ModelData data = EncryptTools.decryptModel(UuidUtils.asBytes(uuid), ClientModelManager.PASSWORD, fileBytes);
-                    if (data != null) {
-                        Minecraft.getMinecraft().addScheduledTask(() -> ClientModelManager.registerAll(data));
-                    }
+                if (Minecraft.getMinecraft().player == null) {
+                    YesSteveModel.LOGGER.warn("YSM: 玩家尚未进入世界，跳过模型 {}", fileName);
+                    return;
+                }
+                UUID uuid = Minecraft.getMinecraft().player.getUniqueID();
+                Path modelFile = ServerModelManager.CACHE_CLIENT.resolve(fileName);
+                byte[] fileBytes = FileUtils.readFileToByteArray(modelFile.toFile());
+                ModelData data = EncryptTools.decryptModel(UuidUtils.asBytes(uuid), ClientModelManager.PASSWORD, fileBytes);
+                if (data != null) {
+                    Minecraft.getMinecraft().addScheduledTask(() -> ClientModelManager.registerAll(data));
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                YesSteveModel.LOGGER.error("YSM: 加载模型 {} 失败", fileName, e);
             }
         });
     }

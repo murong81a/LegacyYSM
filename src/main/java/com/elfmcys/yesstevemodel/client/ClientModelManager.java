@@ -57,7 +57,13 @@ public class ClientModelManager {
     public static AnimationFile DEFAULT_ANIMATION_FILE = new AnimationFile();
     public static List<String> CACHE_MD5 = Lists.newArrayList();
     public static List<String> AUTH_MODELS = Lists.newArrayList();
-    public static byte[] PASSWORD;
+    /**
+     * 服务器下发的模型包密码。
+     * <p>
+     * 由网络包处理（主线程）写入、由 {@link ThreadTools} 线程池读取，必须 volatile 才能保证可见性，
+     * 否则工作线程可能永远读到 null（表现为一直等密码）。
+     */
+    public static volatile byte[] PASSWORD;
 
     public static void registerAll(ModelData data) {
         ResourceLocation modelId = new ResourceLocation(YesSteveModel.MOD_ID, data.getModelId());
@@ -241,12 +247,16 @@ public class ClientModelManager {
         SyncModelFiles syncModelFiles = new SyncModelFiles(md5Info);
         ThreadTools.THREAD_POOL.submit(() -> {
             try {
-                while (Minecraft.getMinecraft().getConnection() == null) {
-                    Thread.sleep(500);
+                // 有超时的等待：断线回主菜单时不再永久占住线程池线程
+                if (!ThreadTools.awaitUntil(() -> Minecraft.getMinecraft().getConnection() != null,
+                        ThreadTools.DEFAULT_WAIT_TIMEOUT_MS)) {
+                    YesSteveModel.LOGGER.warn("YSM: 等待服务器连接超时（{} ms），本次模型同步取消",
+                            ThreadTools.DEFAULT_WAIT_TIMEOUT_MS);
+                    return;
                 }
                 NetworkHandler.CHANNEL.sendToServer(syncModelFiles);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            } catch (Exception e) {
+                YesSteveModel.LOGGER.error("YSM: 发送模型同步请求失败", e);
             }
         });
     }
