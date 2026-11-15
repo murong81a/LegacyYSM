@@ -1,0 +1,73 @@
+package com.elfmcys.yesstevemodel.geckolib3.geo.render;
+
+import com.elfmcys.yesstevemodel.geckolib3.geo.raw.pojo.Bone;
+import com.elfmcys.yesstevemodel.geckolib3.geo.raw.pojo.Cube;
+import com.elfmcys.yesstevemodel.geckolib3.geo.raw.pojo.ModelProperties;
+import com.elfmcys.yesstevemodel.geckolib3.geo.raw.tree.RawBoneGroup;
+import com.elfmcys.yesstevemodel.geckolib3.geo.raw.tree.RawGeometryTree;
+import com.elfmcys.yesstevemodel.geckolib3.geo.render.built.GeoBone;
+import com.elfmcys.yesstevemodel.geckolib3.geo.render.built.GeoMesh;
+import com.elfmcys.yesstevemodel.geckolib3.geo.render.built.GeoModel;
+import com.elfmcys.yesstevemodel.geckolib3.util.VectorUtils;
+
+import javax.vecmath.Vector3f;
+import java.util.ArrayList;
+import java.util.List;
+
+public class GeoBuilder implements IGeoBuilder {
+    private static final IGeoBuilder DEFAULT_BUILDER = new GeoBuilder();
+
+    public static IGeoBuilder getGeoBuilder() {
+        return DEFAULT_BUILDER;
+    }
+
+    @Override
+    public GeoModel constructGeoModel(RawGeometryTree geometryTree) {
+        List<GeoBone> topLevelBones = new ArrayList<>();
+
+        for (RawBoneGroup rawBone : geometryTree.topLevelBones.values()) {
+            GeoBone bone = this.constructBone(rawBone, geometryTree.properties, 0);
+            topLevelBones.add(bone);
+        }
+
+        return new GeoModel(topLevelBones, geometryTree.properties);
+    }
+
+    public GeoBone constructBone(RawBoneGroup bone, ModelProperties properties, int depth) {
+        Bone rawBone = bone.selfBone;
+        Vector3f rotation = VectorUtils.convertDoubleToFloat(rawBone.getRotation());
+        Vector3f pivot = VectorUtils.convertDoubleToFloat(rawBone.getPivot());
+        VectorUtils.scale(rotation, -1, -1, 1);
+
+        Cube[] cubes = rawBone.getCubes();
+        GeoMesh.GeoMeshBuilder meshBuilder = new GeoMesh.GeoMeshBuilder(cubes == null ? 0 : cubes.length);
+        if (cubes != null) {
+            // 使用 For i 循环访问数组效率更高
+            //noinspection ForLoopReplaceableByForEach
+            for (int i = 0; i < cubes.length; i++) {
+                meshBuilder.addCube(cubes[i], properties, rawBone.getInflate() == null ? 0 : rawBone.getInflate(), rawBone.getMirror());
+            }
+        }
+        GeoMesh mesh = meshBuilder.build();
+
+        List<GeoBone> children = new ArrayList<>();
+        for (RawBoneGroup child : bone.children.values()) {
+            children.add(this.constructBone(child, properties, depth + 1));
+        }
+
+        GeoBone geoBone = new GeoBone(children, rawBone.getName(),
+                new Vector3f(-pivot.x, pivot.y, pivot.z),
+                new Vector3f((float) Math.toRadians(rotation.getX()), (float) Math.toRadians(rotation.getY()), (float) Math.toRadians(rotation.getZ())),
+                mesh,
+                rawBone.getMirror(),
+                rawBone.getInflate(),
+                rawBone.getNeverRender(),
+                rawBone.getReset());
+
+        for (GeoBone child : children) {
+            child.setParent(geoBone);
+        }
+
+        return geoBone;
+    }
+}

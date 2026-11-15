@@ -1,0 +1,12 @@
+[{
+    "modid": "yes_steve_model",
+    "name": "Yes Steve Model",
+    "version": "1.2.0-1.10.2",
+    "mcversion": "1.10.2",
+    "description": "A mod based on GeckoLib that modifies the player model",
+    "authorList": ["YS Group", "TartaricAcid", "AryochiL", "TomatoPuddin", "RuiXuqi", "sddsd2332"],
+    "credits": "bernie-g (GeckoLib), fadookie (mclib), TT432 & SQwatermark",
+    "license": "BSD-3-Clause",
+    "url": "https://github.com/RuiXuqi/YesSteveModel",
+    "logoFile": "yesstevemodel.png"
+}]

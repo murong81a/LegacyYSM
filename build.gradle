@@ -1,0 +1,62 @@
+buildscript {
+    repositories {
+        maven { url = uri('../localrepo') }
+        maven { url = 'https://mirrors.ustc.edu.cn/bmclapi/' }
+        maven { url = 'https://maven.aliyun.com/repository/public' }
+        maven { url = 'https://libraries.minecraft.net' }
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+    }
+}
+
+apply plugin: 'net.minecraftforge.gradle.forge'
+
+version = '1.2.0-1.10.2'
+group = 'com.elfmcys.yesstevemodel'
+archivesBaseName = 'yesstevemodel-1.10.2'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+minecraft {
+    suppressVersionTest = true
+    version = '1.10.2-12.18.3.2511'
+    runDir = 'run'
+    mappings = 'stable_29'
+    makeObfSourceJar = false
+}
+
+repositories {
+    maven { url = 'https://mirrors.ustc.edu.cn/bmclapi/' }
+    maven { url = 'https://maven.aliyun.com/repository/public' }
+    maven { url = 'https://libraries.minecraft.net' }
+}
+
+dependencies {
+}
+
+processResources {
+    inputs.property 'version', project.version
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+    }
+}
+
+compileJava {
+    options.encoding = 'UTF-8'
+    options.compilerArgs += ['-Xmaxerrs', '10000']
+}
+
+// javac runs externally on JDK 17 + Jabel (see compile.ps1) because the sources
+// use modern Java syntax that javac 8 cannot parse.
+compileJava.enabled = false
+
+task dumpcp {
+    doLast {
+        def f = file("$buildDir/cp.txt")
+        f.parentFile.mkdirs()
+        f.text = sourceSets.main.compileClasspath.asPath
+        println "classpath written: ${f} (${f.text.length()} chars)"
+    }
+}
