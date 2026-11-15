@@ -66,9 +66,11 @@ public final class NetworkHandler {
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static void reg(Supplier<Class<?>> handlerSupplier, Class<?> message, int id, Side side) {
-        boolean client = FMLCommonHandler.instance().getSide().isClient();
-        boolean handlerMatchesSide = (side == Side.CLIENT) == client;
-        Class<?> handler = handlerMatchesSide ? handlerSupplier.get() : NoopHandler.class;
+        boolean physicalClient = FMLCommonHandler.instance().getSide().isClient();
+        // 客户端 JVM 里同时存在客户端和集成服务器两个逻辑侧，两侧 Handler 都应注册；
+        // 只有专用服务端（physical SERVER）不能加载客户端 Handler。
+        boolean canLoadHandler = physicalClient || side == Side.SERVER;
+        Class<?> handler = canLoadHandler ? handlerSupplier.get() : NoopHandler.class;
         CHANNEL.registerMessage((Class) handler, (Class) message, id, side);
     }
 

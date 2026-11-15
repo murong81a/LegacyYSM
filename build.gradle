@@ -56,8 +56,15 @@ processResources {
 
 jar {
     manifest {
-        attributes 'FMLAT': 'yes_steve_model_at.cfg'
+        attributes 'FMLAT': 'yes_steve_model_at.cfg',
+                'FMLCorePlugin': 'com.elfmcys.yesstevemodel.core.YsmCorePlugin',
+                'FMLCorePluginContainsFMLMod': 'true'
     }
+}
+
+// Dev runs don't read FMLCorePlugin from the jar manifest, so load it explicitly.
+tasks.matching { it.name == 'runClient' }.all {
+    jvmArgs '-Dfml.coreMods.load=com.elfmcys.yesstevemodel.core.YsmCorePlugin', '-Dysm.blockFullscreen=true'
 }
 
 compileJava {
