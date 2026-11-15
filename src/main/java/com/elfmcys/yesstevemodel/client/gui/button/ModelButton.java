@@ -99,15 +99,16 @@ public class ModelButton extends Button {
             GlStateManager.disableBlend();
         }
         // 玩家模型
-        GlStateManager.enableDepth();
+        // 光影下世界/预览用的深度缓冲不一定是当前 FBO 的深度附件，glClear 可能清错对象，
+        // 所以这里直接关闭深度测试，让预览始终画在最上层（不依赖任何缓冲状态）。
+        GlStateManager.disableDepth();
         RenderUtil.scissor(this.xPosition, this.yPosition, this.width, this.height - 20);
-        // 清掉深度缓冲，避免世界深度（或光影的深度附件）把 GUI 里的模型裁掉
-        GlStateManager.clear(GL11.GL_DEPTH_BUFFER_BIT);
         RenderUtil.renderEntityInInventory(this.xPosition + this.width / 2, this.yPosition + this.height / 2 + 20, 30, mc.player, this.modelInfo.getLeft(), this.modelInfo.getRight().get(0), custom -> {
             if (!this.previewAnimation.isEmpty() && !custom.hasPreviewAnimation(this.previewAnimation)) {
                 custom.setPreviewAnimation(this.previewAnimation);
             }
         }, this.disablePreviewRotation);
+        RenderUtil.resetGuiRenderState();
         GL11.glDisable(GL11.GL_SCISSOR_TEST);
         GlStateManager.disableDepth();
         // 前景图
