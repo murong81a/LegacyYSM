@@ -10,6 +10,7 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 
 import javax.annotation.Nullable;
+import com.elfmcys.yesstevemodel.util.CompatUtil;
 
 public class SetStarModel implements IPacketBufferMessage {
     private ResourceLocation modelId;
@@ -33,13 +34,13 @@ public class SetStarModel implements IPacketBufferMessage {
 
     @Override
     public void toBytes(PacketBuffer buf) {
-        buf.writeResourceLocation(this.modelId);
+        CompatUtil.writeResourceLocation(buf, this.modelId);
         buf.writeBoolean(this.isAdd);
     }
 
     @Override
     public void fromBytes(PacketBuffer buf) {
-        this.modelId = buf.readResourceLocation();
+        this.modelId = CompatUtil.readResourceLocation(buf);
         this.isAdd = buf.readBoolean();
     }
 
@@ -49,7 +50,7 @@ public class SetStarModel implements IPacketBufferMessage {
         public IMessage onMessage(SetStarModel message, MessageContext ctx) {
             if (ctx.side.isServer()) {
                 FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
-                    EntityPlayerMP sender = ctx.getServerHandler().player;
+                    EntityPlayerMP sender = ctx.getServerHandler().playerEntity;
                     if (sender == null) {
                         return;
                     }

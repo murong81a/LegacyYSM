@@ -17,6 +17,7 @@ import net.minecraft.util.text.TextFormatting;
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.opengl.GL11;
 
+import java.util.Comparator;
 import java.util.List;
 
 public class PlayerTextureScreen extends Screen {
@@ -49,7 +50,7 @@ public class PlayerTextureScreen extends Screen {
         this.parent = parent;
         this.modelId = modelId;
         this.textures = textures;
-        this.textures.sort(ResourceLocation::compareTo);
+        this.textures.sort(Comparator.comparing(ResourceLocation::toString));
         this.animations = Lists.newArrayList(ClientModelManager.DEFAULT_ANIMATION_FILE.animations().keySet());
         this.animations.sort(String::compareTo);
         this.player = parent.player;

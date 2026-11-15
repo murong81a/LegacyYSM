@@ -75,7 +75,6 @@ public class VariableStorage implements ITempVariableStorage, IScopedVariableSto
                 newPublicMap.put(publicVariableName, value);
             }
         }
-        newPublicMap.trim();
         this.publicMap = newPublicMap;
     }
 

@@ -1,11 +1,12 @@
 package com.elfmcys.yesstevemodel.geckolib3.core.molang.util;
 
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-
 import java.util.Collection;
-import java.util.stream.Collectors;
+import java.util.HashSet;
 
-public class PooledStringHashSet extends IntOpenHashSet {
+/**
+ * 1.10.2 环境里 fastutil 是精简版，没有 {@code IntOpenHashSet}，这里直接用 {@link HashSet}。
+ */
+public class PooledStringHashSet extends HashSet<Integer> {
     public PooledStringHashSet() {
     }
 
@@ -14,10 +15,12 @@ public class PooledStringHashSet extends IntOpenHashSet {
     }
 
     public PooledStringHashSet(Collection<String> m) {
-        super(m.stream().map(StringPool::computeIfAbsent).collect(Collectors.toSet()));
+        for (String key : m) {
+            this.add(StringPool.computeIfAbsent(key));
+        }
     }
 
-    public PooledStringHashSet(IntOpenHashSet m) {
+    public PooledStringHashSet(HashSet<Integer> m) {
         super(m);
     }
 

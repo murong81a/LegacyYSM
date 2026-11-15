@@ -1,7 +1,6 @@
 package com.elfmcys.yesstevemodel.geckolib3.geo.animated;
 
 import com.elfmcys.yesstevemodel.geckolib3.geo.render.built.GeoModel;
-import com.google.common.collect.Maps;
 import java.util.HashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.Collections;
@@ -46,7 +45,7 @@ public class AnimatedGeoModel implements ILocationModel {
 
         var bones = new HashMap<String, AnimatedGeoBone>();
         this.topLevelBones = Collections.unmodifiableList(new ObjectArrayList<>(model.topLevelBones().stream().map(b -> new AnimatedGeoBone(b, bones)).collect(Collectors.toList())));
-        this.bones = Maps.unmodifiable(bones);
+        this.bones = Collections.unmodifiableMap(bones);
 
         // https://ysm.cfpa.team/wiki/tph2yetr/#%E4%B8%BB%E6%A8%A1%E5%9E%8B
         this.leftHandBones = this.getLocatorHierarchy("LeftHandLocator"); // 左手手持物品定位组
@@ -72,7 +71,7 @@ public class AnimatedGeoModel implements ILocationModel {
     private List<AnimatedGeoBone> getLocatorHierarchy(String locatorName) {
         var bone = this.bones.get(locatorName);
         if (bone == null) {
-            return Collections.<T>emptyList();
+            return Collections.emptyList();
         }
 
         var list = new ObjectArrayList<AnimatedGeoBone>();

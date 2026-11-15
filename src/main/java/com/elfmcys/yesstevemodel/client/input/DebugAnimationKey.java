@@ -200,7 +200,7 @@ public class DebugAnimationKey {
     private static int getEquipmentCount(EntityPlayerSP player) {
         int count = 0;
         for (ItemStack s : player.getArmorInventoryList()) {
-            if (!s.isEmpty()) {
+            if (s != null) {
                 count += 1;
             }
         }
@@ -209,7 +209,7 @@ public class DebugAnimationKey {
 
     private static double getMaxUseDuration(EntityPlayerSP player) {
         ItemStack useItem = player.getActiveItemStack();
-        if (useItem.isEmpty()) {
+        if (useItem == null) {
             return 0.0;
         } else {
             return useItem.getMaxItemUseDuration();
@@ -258,6 +258,6 @@ public class DebugAnimationKey {
     }
 
     private static boolean getSlotValue(EntityPlayerSP player, EntityEquipmentSlot slot) {
-        return !player.getItemStackFromSlot(slot).isEmpty();
+        return player.getItemStackFromSlot(slot) != null;
     }
 }

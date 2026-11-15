@@ -33,7 +33,16 @@ repositories {
     maven { url = 'https://libraries.minecraft.net' }
 }
 
+def jabelHome = file('D:/MuRong/cwsgi12313/MRPlus/_tmp/ysm/env/jabel')
+
 dependencies {
+    // Jabel turns the Java 16+ syntax used by the sources into Java 8 bytecode.
+    // The javac plugin itself must also be on the compilation classpath because
+    // the sources import com.github.bsideup.jabel.Desugar.
+    compileOnly files("$jabelHome/jabel-javac-plugin-1.0.0.jar",
+            "$jabelHome/byte-buddy-1.12.18.jar",
+            "$jabelHome/byte-buddy-agent-1.12.18.jar",
+            "$jabelHome/jna-5.12.1.jar")
 }
 
 processResources {
@@ -41,16 +50,24 @@ processResources {
     from(sourceSets.main.resources.srcDirs) {
         include 'mcmod.info'
     }
+    // FML only picks up access transformers from META-INF + the FMLAT manifest entry.
+    rename '(.+_at.cfg)', 'META-INF/$1'
+}
+
+jar {
+    manifest {
+        attributes 'FMLAT': 'yes_steve_model_at.cfg'
+    }
 }
 
 compileJava {
     options.encoding = 'UTF-8'
-    options.compilerArgs += ['-Xmaxerrs', '10000']
+    options.compilerArgs += ['-Xmaxerrs', '10000', '-Xlint:-options', '-Xplugin:jabel']
+    // Gradle itself runs on JDK 8 (ForgeGradle 2.3 limitation), but the sources
+    // need a JDK 17 parser. Jabel makes it emit Java 8 (major 52) bytecode.
+    options.fork = true
+    options.forkOptions.executable = 'D:/JAVA/zulu-jdk17.0.21.0.3/bin/javac.exe'
 }
-
-// javac runs externally on JDK 17 + Jabel (see compile.ps1) because the sources
-// use modern Java syntax that javac 8 cannot parse.
-compileJava.enabled = false
 
 task dumpcp {
     doLast {

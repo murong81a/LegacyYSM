@@ -47,9 +47,9 @@ public class UploadFile implements IPacketBufferMessage {
         @Nullable
         @Override
         public IMessage onMessage(UploadFile message, MessageContext ctx) {
-            if (ctx.side.isServer() && ctx.getServerHandler().player.canUseCommand(4, StringUtils.EMPTY)) {
+            if (ctx.side.isServer() && ctx.getServerHandler().playerEntity.canUseCommand(4, StringUtils.EMPTY)) {
                 FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
-                    writeFile(message, ctx.getServerHandler().player);
+                    writeFile(message, ctx.getServerHandler().playerEntity);
                 });
             }
             return null;

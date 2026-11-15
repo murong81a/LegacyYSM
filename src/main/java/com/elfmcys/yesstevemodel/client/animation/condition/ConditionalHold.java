@@ -13,7 +13,7 @@ public class ConditionalHold extends AbstractConditionItem {
 
     @Override
     public String doTest(EntityPlayer player, EnumHand hand) {
-        if (player.getHeldItem(hand).isEmpty()) {
+        if (player.getHeldItem(hand) == null) {
             return hand == EnumHand.MAIN_HAND ? EMPTY_MAINHAND : EMPTY_OFFHAND;
         }
         return super.doTest(player, hand);

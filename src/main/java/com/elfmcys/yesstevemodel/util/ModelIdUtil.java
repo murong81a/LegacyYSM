@@ -8,7 +8,7 @@ import javax.annotation.Nullable;
 public final class ModelIdUtil {
     public static ResourceLocation getSubModelId(ResourceLocation id, String subName) {
         String newPath = id.getResourcePath() + "/" + subName;
-        return new ResourceLocation(id.getNamespace(), newPath);
+        return new ResourceLocation(id.getResourceDomain(), newPath);
     }
 
     public static ResourceLocation getInfoId(ResourceLocation id) {
@@ -29,7 +29,7 @@ public final class ModelIdUtil {
 
     public static ResourceLocation getModelIdFromMainId(ResourceLocation mainId) {
         String newPath = mainId.getResourcePath().substring(0, mainId.getResourcePath().length() - 5);
-        return new ResourceLocation(mainId.getNamespace(), newPath);
+        return new ResourceLocation(mainId.getResourceDomain(), newPath);
     }
 
     @Nullable

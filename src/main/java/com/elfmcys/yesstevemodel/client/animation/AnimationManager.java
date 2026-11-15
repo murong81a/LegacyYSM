@@ -264,7 +264,7 @@ public final class AnimationManager {
             return PlayState.STOP;
         }
         ItemStack itemBySlot = player.getItemStackFromSlot(slot);
-        if (itemBySlot.isEmpty()) {
+        if (itemBySlot == null) {
             return PlayState.STOP;
         }
 

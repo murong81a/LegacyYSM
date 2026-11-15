@@ -13,6 +13,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 import javax.annotation.Nullable;
 import java.util.Set;
+import com.elfmcys.yesstevemodel.util.CompatUtil;
 
 public class SyncStarModels implements IPacketBufferMessage {
     private Set<ResourceLocation> starModels;
@@ -28,7 +29,7 @@ public class SyncStarModels implements IPacketBufferMessage {
     public void toBytes(PacketBuffer buf) {
         buf.writeVarInt(this.starModels.size());
         for (ResourceLocation modelId : this.starModels) {
-            buf.writeResourceLocation(modelId);
+            CompatUtil.writeResourceLocation(buf, modelId);
         }
     }
 
@@ -37,7 +38,7 @@ public class SyncStarModels implements IPacketBufferMessage {
         int size = buf.readVarInt();
         Set<ResourceLocation> tmp = Sets.newHashSet();
         for (int i = 0; i < size; i++) {
-            tmp.add(buf.readResourceLocation());
+            tmp.add(CompatUtil.readResourceLocation(buf));
         }
         this.starModels = tmp;
     }

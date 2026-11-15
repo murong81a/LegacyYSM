@@ -29,6 +29,7 @@ import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -83,7 +84,7 @@ public class PlayerModelScreen extends Screen {
             this.models.entrySet().removeIf(next -> !next.getKey().getResourcePath().contains(search));
         }
         this.modelOrderList = Lists.newArrayList(this.models.keySet());
-        this.modelOrderList.sort(ResourceLocation::compareTo);
+        this.modelOrderList.sort(Comparator.comparing(ResourceLocation::toString));
         this.maxPage = (this.models.size() - 1) / 10;
     }
 

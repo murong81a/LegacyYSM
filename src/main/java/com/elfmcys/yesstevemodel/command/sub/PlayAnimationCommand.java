@@ -14,6 +14,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
+import com.elfmcys.yesstevemodel.command.CommandUtil;
 
 public class PlayAnimationCommand extends CommandBase {
     private static final String PLAY_NAME = "play";
@@ -39,7 +40,7 @@ public class PlayAnimationCommand extends CommandBase {
     @Override
     public void execute(@Nonnull MinecraftServer server, @Nonnull ICommandSender sender, @Nonnull String[] args) throws CommandException {
         if (args.length != 2) throw new WrongUsageException(this.getUsage(sender));
-        List<EntityPlayerMP> targets = getPlayers(server, sender, args[0]);
+        List<EntityPlayerMP> targets = CommandUtil.getPlayers(server, sender, args[0]);
         this.playAnimation(targets, args[1]);
     }
 

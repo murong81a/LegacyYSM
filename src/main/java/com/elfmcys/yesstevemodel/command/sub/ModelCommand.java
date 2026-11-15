@@ -39,6 +39,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import com.elfmcys.yesstevemodel.command.CommandUtil;
 
 public class ModelCommand extends CommandBase {
     public static final Gson GSON = new GsonBuilder().disableHtmlEscaping().excludeFieldsWithoutExposeAnnotation().create();
@@ -88,7 +89,7 @@ public class ModelCommand extends CommandBase {
     }
 
     private void setModel(MinecraftServer server, ICommandSender sender, String targetsArg, String modelName, String textureName, boolean ignoreAuth) throws CommandException {
-        List<EntityPlayerMP> targets = getPlayers(server, sender, targetsArg);
+        List<EntityPlayerMP> targets = CommandUtil.getPlayers(server, sender, targetsArg);
 
         if (!ServerModelManager.CACHE_NAME_INFO.containsKey(modelName)) {
             sender.sendMessage(new TextComponentTranslation("commands.yes_steve_model.export.not_exist",
@@ -130,7 +131,7 @@ public class ModelCommand extends CommandBase {
     }
 
     private void reloadAllPack(MinecraftServer server, ICommandSender sender) {
-        StopWatch watch = StopWatch.createStarted();
+        long startNanos = System.nanoTime();
         this.checkModelFiles(sender, ServerModelManager.BUILTIN);
         this.checkModelFiles(sender, ServerModelManager.CUSTOM);
         this.checkModelFiles(sender, ServerModelManager.AUTH);
@@ -149,8 +150,8 @@ public class ModelCommand extends CommandBase {
                 }
             });
         }));
-        watch.stop();
-        notifyCommandListener(sender, this, "message.yes_steve_model.model.reload.info", watch.getTime(TimeUnit.MICROSECONDS) / 1000.0);
+        
+        notifyCommandListener(sender, this, "message.yes_steve_model.model.reload.info", (System.nanoTime() - startNanos) / 1000.0 / 1000.0);
     }
 
     private void checkModelFiles(ICommandSender sender, Path rootPath) {

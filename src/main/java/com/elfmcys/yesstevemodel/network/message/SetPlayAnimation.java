@@ -41,7 +41,7 @@ public class SetPlayAnimation implements IPacketBufferMessage {
         public IMessage onMessage(SetPlayAnimation message, MessageContext ctx) {
             if (ctx.side.isServer()) {
                 FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
-                    EntityPlayerMP sender = ctx.getServerHandler().player;
+                    EntityPlayerMP sender = ctx.getServerHandler().playerEntity;
                     if (sender == null) {
                         return;
                     }

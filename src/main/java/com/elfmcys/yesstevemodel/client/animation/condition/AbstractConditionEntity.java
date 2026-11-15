@@ -9,6 +9,7 @@ import net.minecraft.util.ResourceLocation;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
+import com.elfmcys.yesstevemodel.util.CompatUtil;
 
 public abstract class AbstractConditionEntity {
     private static final String EMPTY = StringUtils.EMPTY;
@@ -61,7 +62,7 @@ public abstract class AbstractConditionEntity {
         if (this.idTest.isEmpty()) {
             return EMPTY;
         }
-        ResourceLocation registryName = EntityList.getKey(entity);
+        ResourceLocation registryName = CompatUtil.getEntityId(entity);
         if (registryName == null) {
             return EMPTY;
         }

@@ -10,7 +10,6 @@ import com.elfmcys.yesstevemodel.geckolib3.core.event.predicate.AnimationEvent;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.binding.ContextBinding;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.builtin.query.EmptyFunction;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.context.IContext;
-import com.elfmcys.yesstevemodel.mixininterface.EntityArrowAccessor;
 import com.elfmcys.yesstevemodel.util.ComponentUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -22,7 +21,6 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.item.EntityEnderPearl;
 import net.minecraft.entity.item.EntityExpBottle;
-import net.minecraft.entity.passive.EntityParrot;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.projectile.*;
 import net.minecraft.init.Items;
@@ -48,6 +46,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Locale;
 import java.util.Objects;
+import com.elfmcys.yesstevemodel.util.CompatUtil;
 
 public class YSMBinding extends ContextBinding {
     public static final YSMBinding INSTANCE = new YSMBinding();
@@ -129,10 +128,11 @@ public class YSMBinding extends ContextBinding {
 
         this.playerEntityVar("texture_name", ctx -> StringUtils.EMPTY);
         this.playerEntityVar("first_person_mod_hide", ctx -> false);
-        this.playerEntityVar("has_left_shoulder_parrot", ctx -> !ctx.entity().getLeftShoulderEntity().isEmpty());
-        this.playerEntityVar("has_right_shoulder_parrot", ctx -> !ctx.entity().getRightShoulderEntity().isEmpty());
-        this.playerEntityVar("left_shoulder_parrot_variant", ctx -> getParrotVariant(ctx.entity().getLeftShoulderEntity()));
-        this.playerEntityVar("right_shoulder_parrot_variant", ctx -> getParrotVariant(ctx.entity().getRightShoulderEntity()));
+        // 1.10.2 没有鹦鹉/肩膀实体，这几个变量恒为默认值
+        this.playerEntityVar("has_left_shoulder_parrot", ctx -> false);
+        this.playerEntityVar("has_right_shoulder_parrot", ctx -> false);
+        this.playerEntityVar("left_shoulder_parrot_variant", ctx -> "empty");
+        this.playerEntityVar("right_shoulder_parrot_variant", ctx -> "empty");
 
         this.playerEntityVar("attack_damage", ctx -> ctx.entity().getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).getAttributeValue());
         this.playerEntityVar("attack_speed", ctx -> ctx.entity().getEntityAttribute(SharedMonsterAttributes.ATTACK_SPEED).getAttributeValue());
@@ -141,9 +141,9 @@ public class YSMBinding extends ContextBinding {
         this.playerEntityVar("knockback_resistance", ctx -> ctx.entity().getEntityAttribute(SharedMonsterAttributes.KNOCKBACK_RESISTANCE).getAttributeValue());
         this.playerEntityVar("luck", ctx -> ctx.entity().getEntityAttribute(SharedMonsterAttributes.LUCK).getAttributeValue());
 
-        this.playerEntityVar("block_reach", ctx -> ctx.entity().getEntityAttribute(EntityPlayer.REACH_DISTANCE).getAttributeValue());
+        this.playerEntityVar("block_reach", ctx -> 5.0);
         this.playerEntityVar("entity_reach", ctx -> 0.0);
-        this.playerEntityVar("swim_speed", ctx -> ctx.entity().getEntityAttribute(EntityLivingBase.SWIM_SPEED).getAttributeValue());
+        this.playerEntityVar("swim_speed", ctx -> 0.0);
         this.playerEntityVar("entity_gravity", ctx -> 0.0);
         this.playerEntityVar("step_height_addition", ctx -> 0.0);
         this.playerEntityVar("nametag_distance", ctx -> 0.0);
@@ -176,7 +176,13 @@ public class YSMBinding extends ContextBinding {
         this.arrowEntityVar("on_ground_time", ctx -> ctx.entity().timeInGround);
         this.arrowEntityVar("in_ground", ctx -> ctx.entity().inGround);
         this.arrowEntityVar("is_spectral_arrow", ctx -> ctx.entity() instanceof EntitySpectralArrow);
-        this.entityVar("shoot_item_id", ctx -> ((EntityArrowAccessor) ctx.entity()).ysm$getShootItemId());
+        this.arrowEntityVar("shoot_item_id", ctx -> {
+            if (ctx.entity().shootingEntity instanceof EntityLivingBase shooter) {
+                ResourceLocation id = shooter.getHeldItemMainhand().getItem().getRegistryName();
+                return id == null ? "" : id.toString();
+            }
+            return "";
+        });
 
         // TODO：饰品栏
         this.function("has_any_curios", new EmptyFunction());
@@ -199,7 +205,7 @@ public class YSMBinding extends ContextBinding {
     }
 
     private static boolean getSlotValue(EntityLivingBase entity, EntityEquipmentSlot slot) {
-        return !entity.getItemStackFromSlot(slot).isEmpty();
+        return entity.getItemStackFromSlot(slot) != null;
     }
 
     private static int getWeather(WorldClient world) {
@@ -273,8 +279,8 @@ public class YSMBinding extends ContextBinding {
             return null;
         }
         ctx.debugOutput(new TextComponentString("Name ").appendSibling(ComponentUtils.copyOnClickText(biomeId.toString())));
-        for (BiomeDictionary.Type type : BiomeDictionary.getTypes(biome)) {
-            ctx.debugOutput(new TextComponentString("Type ").appendSibling(ComponentUtils.copyOnClickText(type.getName().toLowerCase(Locale.ENGLISH))));
+        for (BiomeDictionary.Type type : BiomeDictionary.getTypesForBiome(biome)) {
+            ctx.debugOutput(new TextComponentString("Type ").appendSibling(ComponentUtils.copyOnClickText(type.name().toLowerCase(Locale.ENGLISH))));
         }
         return null;
     }
@@ -292,7 +298,7 @@ public class YSMBinding extends ContextBinding {
             }
             case ENTITY -> {
                 if (hitResult.entityHit == null) yield StringUtils.EMPTY;
-                ResourceLocation entityId = EntityList.getKey(hitResult.entityHit);
+                ResourceLocation entityId = CompatUtil.getEntityId(hitResult.entityHit);
                 yield entityId != null ? entityId.toString() : StringUtils.EMPTY;
             }
             default -> StringUtils.EMPTY;
@@ -353,20 +359,5 @@ public class YSMBinding extends ContextBinding {
     private static String getHookedIn(EntityFishHook fishHook) {
         String entityId = EntityList.getEntityString(fishHook.caughtEntity);
         return entityId == null ? StringUtils.EMPTY : entityId;
-    }
-
-    private static String getParrotVariant(NBTTagCompound shoulderCompound) {
-        /// {@link net.minecraft.client.renderer.entity.layers.LayerEntityOnShoulder#doRenderLayer(EntityPlayer, float, float, float, float, float, float, float)}
-        if (EntityList.getClassFromName(shoulderCompound.getString("id")) == EntityParrot.class) {
-            return switch (shoulderCompound.getInteger("Variant")) {
-                case 0 -> "red_blue";
-                case 1 -> "blue";
-                case 2 -> "green";
-                case 3 -> "yellow_blue";
-                case 4 -> "grey";
-                default -> "empty";
-            };
-        }
-        return "empty";
     }
 }

@@ -39,6 +39,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
+import com.elfmcys.yesstevemodel.util.CompatUtil;
 
 /*
 1.16.5 - 1.12.2
@@ -199,7 +200,7 @@ public final class RenderUtil {
         GlStateManager.rotate(yaw + 180, 0, 1, 0);
         GlStateManager.translate(-0.5, 0, 0.5);
         ItemStack stack = new ItemStack(Items.BED, 1, EnumDyeColor.RED.getMetadata());
-        stack.getItem().getTileEntityItemStackRenderer().renderByItem(stack);
+        Minecraft.getMinecraft().getRenderItem().renderItem(stack, net.minecraft.client.renderer.block.model.ItemCameraTransforms.TransformType.FIXED);
         GlStateManager.popMatrix();
     }
 
@@ -238,17 +239,17 @@ public final class RenderUtil {
     @SuppressWarnings({"DataFlowIssue", "UnnecessaryReturnStatement"})
     private static void renderExtraEntity(float yaw, EntityPlayer player, CustomPlayerEntity playerEntity, RenderManager dispatcher) throws ExecutionException {
         if (playerEntity.hasPreviewAnimation("ride")) {
-            Entity entity = AnimatableCacheUtil.ENTITIES_CACHE.get(EntityList.getKey(EntityHorse.class), () -> new EntityHorse(player.world));
+            Entity entity = AnimatableCacheUtil.ENTITIES_CACHE.get(CompatUtil.getEntityId(EntityHorse.class), () -> new EntityHorse(player.world));
             renderExtraEntity(yaw, player, dispatcher, entity);
             return;
         }
         if (playerEntity.hasPreviewAnimation("ride_pig")) {
-            Entity entity = AnimatableCacheUtil.ENTITIES_CACHE.get(EntityList.getKey(EntityPig.class), () -> new EntityPig(player.world));
+            Entity entity = AnimatableCacheUtil.ENTITIES_CACHE.get(CompatUtil.getEntityId(EntityPig.class), () -> new EntityPig(player.world));
             renderExtraEntity(yaw, player, dispatcher, entity);
             return;
         }
         if (playerEntity.hasPreviewAnimation("boat")) {
-            Entity entity = AnimatableCacheUtil.ENTITIES_CACHE.get(EntityList.getKey(EntityBoat.class), () -> new EntityBoat(player.world));
+            Entity entity = AnimatableCacheUtil.ENTITIES_CACHE.get(CompatUtil.getEntityId(EntityBoat.class), () -> new EntityBoat(player.world));
             renderExtraEntity(yaw, player, dispatcher, entity);
             return;
         }
@@ -257,7 +258,7 @@ public final class RenderUtil {
     private static void renderExtraEntity(float yaw, EntityPlayer player, RenderManager dispatcher, Entity entity) {
         GlStateManager.rotate(yaw, 0, 1, 0);
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        dispatcher.renderEntity(entity, 0, -entity.getMountedYOffset() - player.getYOffset(), 0, 0.0F, 1.0F, false);
+        dispatcher.doRenderEntity(entity, 0, -entity.getMountedYOffset() - player.getYOffset(), 0, 0.0F, 1.0F, false);
         // 清理实体渲染
         GlStateManager.enableRescaleNormal();
         GlStateManager.enableColorMaterial();
@@ -328,11 +329,11 @@ public final class RenderUtil {
         for (EntityEquipmentSlot slot : EntityEquipmentSlot.values()) {
             itemStacks[i] = player.getItemStackFromSlot(slot);
             if (slot == EntityEquipmentSlot.MAINHAND) {
-                player.inventory.mainInventory.set(player.inventory.currentItem, ItemStack.EMPTY);
+                player.inventory.mainInventory[player.inventory.currentItem] = null;
             } else if (slot == EntityEquipmentSlot.OFFHAND) {
-                player.inventory.offHandInventory.set(0, ItemStack.EMPTY);
+                player.inventory.offHandInventory[0] = null;
             } else {
-                player.inventory.armorInventory.set(slot.getIndex(), ItemStack.EMPTY);
+                player.inventory.armorInventory[slot.getIndex()] = null;
             }
             i++;
         }
@@ -369,22 +370,14 @@ public final class RenderUtil {
         for (EntityEquipmentSlot slot : EntityEquipmentSlot.values()) {
             ItemStack itemStack = itemStacks[i];
             if (slot == EntityEquipmentSlot.MAINHAND) {
-                player.inventory.mainInventory.set(player.inventory.currentItem, itemStack);
+                player.inventory.mainInventory[player.inventory.currentItem] = itemStack;
             } else if (slot == EntityEquipmentSlot.OFFHAND) {
-                player.inventory.offHandInventory.set(0, itemStack);
+                player.inventory.offHandInventory[0] = itemStack;
             } else {
-                player.inventory.armorInventory.set(slot.getIndex(), itemStack);
+                player.inventory.armorInventory[slot.getIndex()] = itemStack;
             }
             i++;
         }
-
-        GlStateManager.popMatrix();
-
-        RenderHelper.disableStandardItemLighting();
-        GlStateManager.disableRescaleNormal();
-        GlStateManager.setActiveTexture(OpenGlHelper.lightmapTexUnit);
-        GlStateManager.disableTexture2D();
-        GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
     }
 
     public static void renderPlayerEntity(EntityPlayer player, double posX, double posY, float scale, float yawOffset, int z) {
@@ -402,7 +395,7 @@ public final class RenderUtil {
         yRot = 180.0F - yRot;
         renderDispatcher.setPlayerViewY(yRot);
         renderDispatcher.setRenderShadow(false);
-        renderDispatcher.renderEntity(player, 0, 0, 0, 0.0F, 1.0F, false); // 最后这个参数是隐藏碰撞箱
+        renderDispatcher.doRenderEntity(player, 0, 0, 0, 0.0F, 1.0F, false); // 最后这个参数是隐藏碰撞箱
         renderDispatcher.setRenderShadow(true);
         GlStateManager.popMatrix();
 

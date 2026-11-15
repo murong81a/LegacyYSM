@@ -32,7 +32,7 @@ public class DumpEquippedItem extends LivingEntityFunction {
         }
 
         ItemStack stack = ctx.entity().getItemStackFromSlot(slotType);
-        if (stack.isEmpty()) {
+        if (stack == null) {
             return null;
         }
 

@@ -46,12 +46,12 @@ public class HashMapStruct implements Struct {
         StringBuilder builder = new StringBuilder();
         builder.append("struct{");
         boolean first = true;
-        for (Map.Entry<Object> entry : this.properties.int2ReferenceEntrySet()) {
+        for (Map.Entry<Integer, Object> entry : this.properties.entrySet()) {
             if (!first) {
                 builder.append(", ");
             }
             first = false;
-            builder.append(String.format("%s=%s", StringPool.getString(entry.getIntKey()), entry.getValue() == null ? "null" : entry.getValue().toString()));
+            builder.append(String.format("%s=%s", StringPool.getString(entry.getKey()), entry.getValue() == null ? "null" : entry.getValue().toString()));
         }
         builder.append("}");
         return builder.toString();

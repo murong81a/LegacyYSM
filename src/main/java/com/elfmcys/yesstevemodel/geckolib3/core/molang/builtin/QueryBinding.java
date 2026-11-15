@@ -99,7 +99,7 @@ public class QueryBinding extends ContextBinding {
                 continue;
             }
             var stack = entity.getItemStackFromSlot(slot);
-            if (!stack.isEmpty()) {
+            if (stack != null) {
                 count++;
             }
         }
@@ -108,7 +108,7 @@ public class QueryBinding extends ContextBinding {
 
     private static double getMaxUseDuration(EntityLivingBase player) {
         ItemStack useItem = player.getActiveItemStack();
-        if (useItem.isEmpty()) {
+        if (useItem == null) {
             return 0.0;
         } else {
             return useItem.getMaxItemUseDuration();

@@ -50,7 +50,7 @@ public class CustomPlayerItemInHandLayer<T extends EntityLivingBase, E extends A
         // 先这样处理，YSM 定位组直接就叫主副手，不好改
         //ItemStack itemStack = livingEntity.getPrimaryHand() == arm ? livingEntity.getHeldItemMainhand() : livingEntity.getHeldItemOffhand();
         ItemStack itemStack = isLeftHand ? livingEntity.getHeldItemOffhand() : livingEntity.getHeldItemMainhand();
-        if (itemStack.isEmpty()) return;
+        if (itemStack == null) return;
 
         GlStateManager.pushMatrix();
         // 缩放不为 0 才会渲染

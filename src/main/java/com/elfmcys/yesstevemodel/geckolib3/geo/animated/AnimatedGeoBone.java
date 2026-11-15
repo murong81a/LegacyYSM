@@ -34,7 +34,7 @@ public class AnimatedGeoBone implements IBone {
             bones.put(geoBone.name(), this);
             this.children = Collections.unmodifiableList(new ObjectArrayList<>(geoBone.children().stream().map(b -> new AnimatedGeoBone(b, bones)).collect(Collectors.toList())));
         } else {
-            this.children = Collections.<T>emptyList();
+            this.children = Collections.emptyList();
         }
     }
 

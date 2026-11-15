@@ -11,6 +11,10 @@ import net.minecraftforge.fml.client.config.GuiConfig;
 import java.util.Collections;
 import java.util.Set;
 
+/**
+ * 1.10.2 的 {@link IModGuiFactory} 与 1.12 不同：没有 {@code hasConfigGui/createConfigGui}，
+ * 改为 {@code mainConfigGuiClass()} 与 {@code getHandlerFor(...)}。
+ */
 @SuppressWarnings("unused")
 public class ConfigGuiFactory implements IModGuiFactory {
     @Override
@@ -18,18 +22,18 @@ public class ConfigGuiFactory implements IModGuiFactory {
     }
 
     @Override
-    public boolean hasConfigGui() {
-        return true;
-    }
-
-    @Override
-    public GuiScreen createConfigGui(final GuiScreen parentScreen) {
-        return new ConfigGui(parentScreen);
+    public Class<? extends GuiScreen> mainConfigGuiClass() {
+        return ConfigGui.class;
     }
 
     @Override
     public Set<RuntimeOptionCategoryElement> runtimeGuiCategories() {
         return Collections.emptySet();
+    }
+
+    @Override
+    public RuntimeOptionGuiHandler getHandlerFor(RuntimeOptionCategoryElement element) {
+        return null;
     }
 
     /**

@@ -52,7 +52,8 @@ public class AuthModelsCapability {
 
     public void deserializeNBT(NBTTagList nbt) {
         this.authModels.clear();
-        for (NBTBase tag : nbt) {
+        for (int i = 0; i < nbt.tagCount(); i++) {
+            NBTBase tag = nbt.get(i);
             if (tag instanceof NBTTagString string) {
                 this.authModels.add(new ResourceLocation(string.getString()));
             }

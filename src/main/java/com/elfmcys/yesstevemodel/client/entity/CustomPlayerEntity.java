@@ -32,7 +32,7 @@ public class CustomPlayerEntity extends AnimatableEntity<EntityPlayer> {
     private static final ResourceLocation DEFAULT_TEXTURE = new ResourceLocation(YesSteveModel.MOD_ID, "default/default.png");
     private static final int FPS = 60;
 
-    private final ItemStack[] handItemsForAnimation = new ItemStack[]{ItemStack.EMPTY, ItemStack.EMPTY};
+    private final ItemStack[] handItemsForAnimation = new ItemStack[]{null, null};
     private final Vector2f headRot = new Vector2f();
     private final @Nullable PlayerState state;
     private ResourceLocation mainModel = DEFAULT_ID;

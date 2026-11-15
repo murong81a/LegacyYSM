@@ -102,7 +102,7 @@ public final class CapabilityEvent {
             if (optional.isPresent()) {
                 String modelId = optional.get().getModelId();
                 if (!ArrowModelCapability.EMPTY.equals(modelId)) {
-                    NetworkHandler.CHANNEL.sendToAllTracking(new SyncArrowModel(arrow.getEntityId(), modelId), arrow);
+                    NetworkHandler.sendToTracking(new SyncArrowModel(arrow.getEntityId(), modelId), arrow);
                 }
             }
         }
@@ -133,6 +133,11 @@ public final class CapabilityEvent {
                     NetworkHandler.sendToClientPlayer(new SyncStarModels(starModelCap.getStarModels()), serverPlayer);
                 }
             });
+        } else if (event.getEntity() instanceof EntityArrow arrow) {
+            // 替代已删除的 EntityArrowMixin：箭刚进入世界时，从射手模型继承箭头模型
+            if (arrow.shootingEntity instanceof EntityPlayer player) {
+                getModelInfoCap(player).ifPresent(cap -> getArrowModelCap(arrow).ifPresent(arrowCap -> arrowCap.setModelId(cap.getModelId().toString())));
+            }
         }
     }
 
@@ -146,7 +151,7 @@ public final class CapabilityEvent {
             getModelInfoCap(player).ifPresent(cap -> {
                 if (cap.isDirty()) {
                     SyncModelInfo syncMsg = new SyncModelInfo(player.getEntityId(), cap);
-                    NetworkHandler.CHANNEL.sendToAllTracking(syncMsg, player);
+                    NetworkHandler.sendToTracking(syncMsg, player);
                     NetworkHandler.sendToClientPlayer(syncMsg, player);
                     cap.setDirty(false);
                 }

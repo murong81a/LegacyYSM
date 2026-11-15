@@ -8,7 +8,7 @@ import com.elfmcys.yesstevemodel.geckolib3.util.Interpolations;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.item.EntityBoat;
-import net.minecraft.entity.passive.AbstractHorse;
+import net.minecraft.entity.passive.EntityHorse;
 import net.minecraft.entity.passive.EntityPig;
 import net.minecraft.entity.player.EntityPlayer;
 
@@ -26,7 +26,7 @@ public class AnimationRegister {
         register("climbing", Priority.HIGHEST, (player, event) -> SwimmingCompat.isSwimmingPose(player));
 
         register("ride_pig", Priority.HIGH, (player, event) -> player.getRidingEntity() instanceof EntityPig);
-        register("ride", Priority.HIGH, (player, event) -> player.getRidingEntity() instanceof AbstractHorse);
+        register("ride", Priority.HIGH, (player, event) -> player.getRidingEntity() instanceof EntityHorse);
         register("boat", Priority.HIGH, (player, event) -> player.getRidingEntity() instanceof EntityBoat);
         register("sit", Priority.HIGH, (player, event) -> player.isRiding());
 //        register("ladder_up", Priority.HIGHEST, (player, event) -> player.isOnLadder() && EntityUtil.getVerticalSpeed(player) > 0);

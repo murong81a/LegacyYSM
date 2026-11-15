@@ -79,7 +79,7 @@ public abstract class AbstractConditionItem {
     }
 
     public String doTest(EntityPlayer player, EnumHand hand) {
-        if (player.getHeldItem(hand).isEmpty()) {
+        if (player.getHeldItem(hand) == null) {
             return EMPTY;
         }
         String result;

@@ -11,6 +11,7 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 
 import javax.annotation.Nullable;
+import com.elfmcys.yesstevemodel.util.CompatUtil;
 
 public class SetModelAndTexture implements IPacketBufferMessage {
     private ResourceLocation modelId;
@@ -26,14 +27,14 @@ public class SetModelAndTexture implements IPacketBufferMessage {
 
     @Override
     public void toBytes(PacketBuffer buf) {
-        buf.writeResourceLocation(this.modelId);
-        buf.writeResourceLocation(this.selectTexture);
+        CompatUtil.writeResourceLocation(buf, this.modelId);
+        CompatUtil.writeResourceLocation(buf, this.selectTexture);
     }
 
     @Override
     public void fromBytes(PacketBuffer buf) {
-        this.modelId = buf.readResourceLocation();
-        this.selectTexture = buf.readResourceLocation();
+        this.modelId = CompatUtil.readResourceLocation(buf);
+        this.selectTexture = CompatUtil.readResourceLocation(buf);
     }
 
     public static class Handler implements IMessageHandler<SetModelAndTexture, IMessage> {
@@ -42,7 +43,7 @@ public class SetModelAndTexture implements IPacketBufferMessage {
         public IMessage onMessage(SetModelAndTexture message, MessageContext ctx) {
             if (ctx.side.isServer()) {
                 FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
-                    EntityPlayerMP sender = ctx.getServerHandler().player;
+                    EntityPlayerMP sender = ctx.getServerHandler().playerEntity;
                     if (sender == null) {
                         return;
                     }

@@ -13,6 +13,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 import javax.annotation.Nullable;
 import java.util.Set;
+import com.elfmcys.yesstevemodel.util.CompatUtil;
 
 public class SyncAuthModels implements IPacketBufferMessage {
     private Set<ResourceLocation> authModels;
@@ -28,7 +29,7 @@ public class SyncAuthModels implements IPacketBufferMessage {
     public void toBytes(PacketBuffer buf) {
         buf.writeVarInt(this.authModels.size());
         for (ResourceLocation modelId : this.authModels) {
-            buf.writeResourceLocation(modelId);
+            CompatUtil.writeResourceLocation(buf, modelId);
         }
     }
 
@@ -37,7 +38,7 @@ public class SyncAuthModels implements IPacketBufferMessage {
         int size = buf.readVarInt();
         Set<ResourceLocation> tmp = Sets.newHashSet();
         for (int i = 0; i < size; i++) {
-            tmp.add(buf.readResourceLocation());
+            tmp.add(CompatUtil.readResourceLocation(buf));
         }
         this.authModels = tmp;
     }

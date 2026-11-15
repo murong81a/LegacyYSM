@@ -29,12 +29,12 @@ public class RefreshModelManage implements IMessage {
         @Nullable
         @Override
         public IMessage onMessage(RefreshModelManage message, MessageContext ctx) {
-            if (ctx.side.isServer() && ctx.getServerHandler().player.canUseCommand(4, StringUtils.EMPTY)) {
+            if (ctx.side.isServer() && ctx.getServerHandler().playerEntity.canUseCommand(4, StringUtils.EMPTY)) {
                 FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
                     List<RequestServerModelInfo.Info> builtinInfo = ManageCommand.getFilesInfo(ServerModelManager.BUILTIN);
                     List<RequestServerModelInfo.Info> customInfo = ManageCommand.getFilesInfo(ServerModelManager.CUSTOM);
                     List<RequestServerModelInfo.Info> authInfo = ManageCommand.getFilesInfo(ServerModelManager.AUTH);
-                    NetworkHandler.sendToClientPlayer(new RequestServerModelInfo(builtinInfo, customInfo, authInfo), ctx.getServerHandler().player);
+                    NetworkHandler.sendToClientPlayer(new RequestServerModelInfo(builtinInfo, customInfo, authInfo), ctx.getServerHandler().playerEntity);
                 });
             }
             return null;

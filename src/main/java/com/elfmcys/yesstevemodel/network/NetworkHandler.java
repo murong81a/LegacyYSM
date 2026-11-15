@@ -5,8 +5,11 @@ import com.elfmcys.yesstevemodel.bukkit.message.SetNpcModelAndTexture;
 import com.elfmcys.yesstevemodel.bukkit.message.SyncNpcDataMessage;
 import com.elfmcys.yesstevemodel.bukkit.message.UpdateNpcDataMessage;
 import com.elfmcys.yesstevemodel.network.message.*;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.server.MinecraftServer;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
@@ -50,6 +53,30 @@ public final class NetworkHandler {
     public static void sendToClientPlayer(IMessage message, EntityPlayer player) {
         if (player instanceof EntityPlayerMP playerMP) {
             CHANNEL.sendTo(message, playerMP);
+        }
+    }
+
+    /**
+     * 等价于 1.12.2 的 {@code SimpleNetworkWrapper#sendToAllTracking}。
+     * <p>
+     * 1.10.2 只有 {@code sendToAllAround}，这里退化为“同一维度内所有玩家”，
+     * 语义上覆盖了所有能看到该实体的玩家，只是多发给了一些远处的玩家。
+     */
+    public static void sendToTracking(IMessage message, Entity entity) {
+        if (entity == null || entity.world == null) {
+            return;
+        }
+        MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
+        if (server == null) {
+            return;
+        }
+        for (EntityPlayerMP player : server.getPlayerList().getPlayers()) {
+            if (player == entity) {
+                continue;
+            }
+            if (player.world == entity.world) {
+                CHANNEL.sendTo(message, player);
+            }
         }
     }
 }

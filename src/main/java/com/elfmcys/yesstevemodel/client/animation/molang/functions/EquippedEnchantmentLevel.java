@@ -31,7 +31,7 @@ public class EquippedEnchantmentLevel extends LivingEntityFunction {
         }
 
         ItemStack itemStack = context.entity().entity().getItemStackFromSlot(slotType);
-        if (itemStack.isEmpty()) {
+        if (itemStack == null) {
             return 0;
         }
 

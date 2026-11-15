@@ -159,7 +159,7 @@ public class ClientModelManager {
     private static AnimationFile getAnimationFile(String file) {
         AnimationFile animationFile = new AnimationFile();
         MolangParser parser = GeckoLibCache.getInstance().parser;
-        JsonObject jsonObject = JsonUtils.fromJson(YesSteveModel.GSON, file, JsonObject.class, false);
+        JsonObject jsonObject = JsonUtils.gsonDeserialize(YesSteveModel.GSON, file, JsonObject.class, false);
         if (jsonObject != null) {
             for (Map.Entry<String, JsonElement> entry : JsonAnimationUtils.getAnimations(jsonObject)) {
                 String animationName = entry.getKey();

@@ -1,5 +1,9 @@
 package com.elfmcys.yesstevemodel;
 
+import com.elfmcys.yesstevemodel.geckolib3.geo.raw.pojo.FormatVersion;
+import com.elfmcys.yesstevemodel.geckolib3.geo.raw.pojo.LocatorValue;
+import com.elfmcys.yesstevemodel.geckolib3.geo.raw.pojo.PolysUnion;
+import com.elfmcys.yesstevemodel.geckolib3.geo.raw.pojo.UvUnion;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.minecraftforge.fml.common.Mod;
@@ -15,7 +19,7 @@ import org.apache.logging.log4j.Logger;
         modid = YesSteveModel.MOD_ID,
         name = Tags.MOD_NAME,
         version = Tags.VERSION,
-        dependencies = "required-after:mixinbooter@[8.0,);after:universaltweaks@[1.19.0,)",
+        dependencies = "after:universaltweaks",
         guiFactory = "com.elfmcys.yesstevemodel.client.config.ConfigGuiFactory",
         customProperties = {
                 @Mod.CustomProperty(k = "license", v = "BSD-3-Clause"),
@@ -25,7 +29,17 @@ import org.apache.logging.log4j.Logger;
 public class YesSteveModel {
     public static final String MOD_ID = Tags.MOD_ID;
     public static final Logger LOGGER = LogManager.getLogger(MOD_ID);
-    public static final Gson GSON = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
+    /**
+     * 1.10.2 自带的 gson 是 2.2.4，没有 {@code @JsonAdapter}，所以这里手动注册类型适配器。
+     */
+    public static final Gson GSON = new GsonBuilder()
+            .disableHtmlEscaping()
+            .setPrettyPrinting()
+            .registerTypeAdapter(FormatVersion.class, new FormatVersion.Serializer())
+            .registerTypeAdapter(LocatorValue.class, new LocatorValue.Serializer())
+            .registerTypeAdapter(PolysUnion.class, new PolysUnion.Serializer())
+            .registerTypeAdapter(UvUnion.class, new UvUnion.Serializer())
+            .create();
 
     @SidedProxy(clientSide = "com.elfmcys.yesstevemodel.client.ClientProxy", serverSide = "com.elfmcys.yesstevemodel.CommonProxy")
     public static CommonProxy proxy;

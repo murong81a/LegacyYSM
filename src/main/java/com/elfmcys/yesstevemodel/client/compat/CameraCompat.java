@@ -1,30 +1,14 @@
 package com.elfmcys.yesstevemodel.client.compat;
 
-import com.elfmcys.yesstevemodel.client.util.EntityUtil;
-import mod.acgaming.universaltweaks.config.UTConfigBugfixes;
-import mod.acgaming.universaltweaks.config.UTConfigTweaks;
-import net.minecraft.client.Minecraft;
-import net.minecraftforge.fml.common.Optional;
-
 /**
- * {@link EntityUtil#getCameraPosition(Minecraft, float)} 的兼容
+ * Universal Tweaks 相机兼容。1.10.2 上没有该模组，暂时恒为 false。
  */
 public class CameraCompat {
     public static boolean thirdPersonIgnoresNonSolidBlocks() {
-        return Mods.UT_INSTALLED && utThirdPersonIgnoresNonSolidBlocks();
-    }
-
-    @Optional.Method(modid = Mods.UNIVERSAL_TWEAKS)
-    private static boolean utThirdPersonIgnoresNonSolidBlocks() {
-        return UTConfigTweaks.ENTITIES.utThirdPersonIgnoresNonSolidBlocks;
+        return false;
     }
 
     public static boolean cameraOrientation() {
-        return Mods.UT_INSTALLED && utCameraOrientation();
-    }
-
-    @Optional.Method(modid = Mods.UNIVERSAL_TWEAKS)
-    private static boolean utCameraOrientation() {
-        return UTConfigBugfixes.MISC.utCameraOrientation;
+        return false;
     }
 }

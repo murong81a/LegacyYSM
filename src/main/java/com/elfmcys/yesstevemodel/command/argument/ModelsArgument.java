@@ -13,7 +13,7 @@ public final class ModelsArgument {
         if (FMLCommonHandler.instance().getSide().isServer()) {
             return ServerModelManager.CACHE_NAME_INFO.keySet();
         } else {
-            return ClientModelManager.MODELS.keySet().stream().map(ResourceLocation::getPath).collect(Collectors.toSet());
+            return ClientModelManager.MODELS.keySet().stream().map(ResourceLocation::getResourcePath).collect(Collectors.toSet());
         }
     }
 }

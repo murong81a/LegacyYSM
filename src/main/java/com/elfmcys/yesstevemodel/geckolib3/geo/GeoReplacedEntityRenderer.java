@@ -9,7 +9,6 @@ import com.elfmcys.yesstevemodel.geckolib3.model.provider.data.EntityModelData;
 import com.elfmcys.yesstevemodel.geckolib3.util.EModelRenderCycle;
 import com.elfmcys.yesstevemodel.geckolib3.util.IRenderCycle;
 import com.elfmcys.yesstevemodel.geckolib3.util.Interpolations;
-import com.elfmcys.yesstevemodel.mixininterface.RenderLivingBaseAccessor;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;
@@ -67,7 +66,7 @@ public abstract class GeoReplacedEntityRenderer<T extends EntityLivingBase, E ex
 
         this.setCurrentModelRenderCycle(EModelRenderCycle.INITIAL);
 
-        if (MinecraftForge.EVENT_BUS.post(new RenderLivingEvent.Pre<>(entity, this, partialTick, x, y, z))) {
+        if (MinecraftForge.EVENT_BUS.post(new RenderLivingEvent.Pre<>(entity, this, x, y, z))) {
             return;
         }
 
@@ -133,7 +132,7 @@ public abstract class GeoReplacedEntityRenderer<T extends EntityLivingBase, E ex
 
         Color renderColor = this.getRenderColor(entity, partialTick);
         if (model != null) {
-            boolean isVisible = this.isVisible(entity);
+            boolean isVisible = !entity.isInvisible();
             boolean isGhost = !isVisible && !entity.isInvisibleToPlayer(mc.player);
             if ((isVisible || isGhost) && this.bindEntityTexture(entity)) {
                 if (isGhost) GlStateManager.enableBlendProfile(GlStateManager.Profile.TRANSPARENT_MODEL);
@@ -177,18 +176,18 @@ public abstract class GeoReplacedEntityRenderer<T extends EntityLivingBase, E ex
 
         // 嗯...TLM 这么实现，一定有它的道理吧
         if (this.renderManager.renderViewEntity != null) {
-            ((RenderLivingBaseAccessor) this).ysm$renderNameTag(entity, x, y, z, entityYaw, partialTick);
+            this.renderName(entity, x, y, z);
         }
 
         /// {@link net.minecraft.client.renderer.entity.RenderLiving#doRender(EntityLiving, double, double, double, float, float)}
         if (!this.renderOutlines && entity instanceof EntityLiving mob) {
-            Entity leashHolder = mob.getLeashHolder();
+            Entity leashHolder = mob.getLeashedToEntity();
             //noinspection ConstantValue
             if (leashHolder != null) {
                 this.renderLeash(entity, x, y, z, entityYaw, partialTick, leashHolder);
             }
         }
-        MinecraftForge.EVENT_BUS.post(new RenderLivingEvent.Post<>(entity, this, partialTick, x, y, z));
+        MinecraftForge.EVENT_BUS.post(new RenderLivingEvent.Post<>(entity, this, x, y, z));
     }
 
     protected float getSwingMotionAnimThreshold() {

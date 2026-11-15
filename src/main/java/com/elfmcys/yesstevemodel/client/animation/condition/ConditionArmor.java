@@ -90,7 +90,7 @@ public class ConditionArmor {
 
     public String doTest(EntityPlayer player, EntityEquipmentSlot slot) {
         ItemStack item = player.getItemStackFromSlot(slot);
-        if (item.isEmpty()) {
+        if (item == null) {
             return EMPTY;
         }
         String result;

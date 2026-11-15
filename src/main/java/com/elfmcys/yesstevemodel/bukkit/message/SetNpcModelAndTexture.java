@@ -6,6 +6,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
+import com.elfmcys.yesstevemodel.util.CompatUtil;
 
 public class SetNpcModelAndTexture implements IPacketBufferMessage {
     private ResourceLocation modelId;
@@ -23,15 +24,15 @@ public class SetNpcModelAndTexture implements IPacketBufferMessage {
 
     @Override
     public void toBytes(PacketBuffer buf) {
-        buf.writeResourceLocation(this.modelId);
-        buf.writeResourceLocation(this.selectTexture);
+        CompatUtil.writeResourceLocation(buf, this.modelId);
+        CompatUtil.writeResourceLocation(buf, this.selectTexture);
         buf.writeInt(this.npcId);
     }
 
     @Override
     public void fromBytes(PacketBuffer buf) {
-        this.modelId = buf.readResourceLocation();
-        this.selectTexture = buf.readResourceLocation();
+        this.modelId = CompatUtil.readResourceLocation(buf);
+        this.selectTexture = CompatUtil.readResourceLocation(buf);
         this.npcId = buf.readInt();
     }
 

@@ -138,7 +138,7 @@ public final class EncryptTools {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return ByteArrays.EMPTY_ARRAY;
+        return new byte[0];
     }
 
     private static void writeString(ByteArrayOutputStream stream, String string) throws IOException {
@@ -180,10 +180,10 @@ public final class EncryptTools {
         IvParameterSpec iv = new IvParameterSpec(uuid);
         byte[] rawPassword = AESUtil.decrypt(secretKey, iv, input).toByteArray();
         if (ByteInteger.bytes2Int(rawPassword, 0) != HEAD) {
-            return ByteArrays.EMPTY_ARRAY;
+            return new byte[0];
         }
         if (ByteInteger.bytes2Int(rawPassword, 4) != VERSION) {
-            return ByteArrays.EMPTY_ARRAY;
+            return new byte[0];
         }
         return rawPassword;
     }

@@ -57,7 +57,7 @@ public class SyncModelFiles implements IPacketBufferMessage {
         public IMessage onMessage(SyncModelFiles message, MessageContext ctx) {
             if (ctx.side.isServer()) {
                 FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
-                    EntityPlayerMP sender = ctx.getServerHandler().player;
+                    EntityPlayerMP sender = ctx.getServerHandler().playerEntity;
                     if (sender == null) {
                         return;
                     }

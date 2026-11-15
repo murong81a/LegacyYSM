@@ -1,42 +1,14 @@
 package com.elfmcys.yesstevemodel.client.compat;
 
-import com.elfmcys.yesstevemodel.client.event.ReplacePlayerHandRenderEvent;
-import net.minecraftforge.client.event.RenderArmEvent;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-
+/**
+ * Cleanroom 的 {@code RenderArmEvent} 在 1.10.2 上不存在，这里退化为空实现。
+ */
 public class RenderArmCompat {
-    private static boolean RENDER_ARM_FOUND = false;
-
     public static void init() {
-        if (Mods.CRL_INSTALLED) {
-            findRenderArm();
-            if (RENDER_ARM_FOUND) {
-                MinecraftForge.EVENT_BUS.register(CrlReplacePlayerHandRenderEvent.class);
-            }
-        }
-    }
-
-    private static void findRenderArm() {
-        try {
-            Class.forName("net.minecraftforge.client.event.RenderArmEvent");
-            RENDER_ARM_FOUND = true;
-        } catch (Exception ignored) {
-        }
+        // no-op
     }
 
     public static boolean foundRenderArm() {
-        return RENDER_ARM_FOUND;
-    }
-
-    public static class CrlReplacePlayerHandRenderEvent {
-        @SubscribeEvent
-        public static void onRenderHand(RenderArmEvent event) {
-            if (!ReplacePlayerHandRenderEvent.shouldRenderArm()) {
-                return;
-            }
-            event.setCanceled(true);
-            ReplacePlayerHandRenderEvent.renderArm(event.getArm());
-        }
+        return false;
     }
 }
