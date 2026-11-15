@@ -65,8 +65,12 @@ public final class AnimationManager {
 
     @Nonnull
     public PlayState predicateParallel(AnimationEvent<?> event, String animationName) {
+        // [ysm-fix] 暂停时不要 STOP。STOP 会让 parallel 动画停止写入 scale，
+        // GeckoLib 的复位逻辑随后把 AllBody.scale / FOX.scale 拉回 1，
+        // 酒狐这种“两套骨架靠 parallel 动画互斥显示”的模型就会人形 + 狐狸同屏。
+        // 暂停期间 seekTime 本身是冻结的，返回 CONTINUE 等于定格。
         if (Minecraft.getMinecraft().isGamePaused()) {
-            return PlayState.STOP;
+            return PlayState.CONTINUE;
         }
         return playLoopAnimation(event, animationName);
     }

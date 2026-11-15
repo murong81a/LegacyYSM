@@ -18,6 +18,7 @@ import com.elfmcys.yesstevemodel.molang.runtime.ExpressionEvaluator;
 import com.github.bsideup.jabel.Desugar;
 import java.util.HashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.client.Minecraft;
 import org.lwjgl.opengl.Display;
 
 import javax.annotation.Nullable;
@@ -121,7 +122,12 @@ public class AnimationProcessor<T extends AnimatableEntity<?>> {
         this.reloadAnimations = false;
 
         // 追踪哪些骨骼应用了动画，并最终将没有动画的骨骼设置为默认值
-        final double resetTickLength = manager.getResetSpeed();
+        // [ysm-fix] 暂停期间不衰减。暂停会让 parallel 动画进入 STOP，
+        // 若无条件执行下面的复位逻辑，没被驱动的骨骼会被拉回初始值 (scale=1)。
+        // 把衰减周期设为无穷大，等于“暂停时姿态定格”。
+        final double resetTickLength = Minecraft.getMinecraft().isGamePaused()
+                ? Double.MAX_VALUE
+                : manager.getResetSpeed();
         for (BoneTopLevelSnapshot topLevelSnapshot : this.modelRendererList) {
             BoneSnapshot initialSnapshot = topLevelSnapshot.bone.getInitialSnapshot();
 
