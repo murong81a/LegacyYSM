@@ -40,7 +40,7 @@ gradle build --no-daemon -I init-mirror.gradle
 - 运行时依赖 **MixinBooter 11.18**（`!mixinbooter-11.18.jar` 放进 `mods`，`!` 保证 coremod 先加载）。`mcmod.info` 已声明 `required-after:mixinbooter`，缺装时 FML 会直接提示，而不是在 coremod 阶段报晦涩错误。
 - 生产 refmap 由 `org.spongepowered:mixin:0.8.7` 的 Annotation Processor 在 `compileJava` 时生成，输出到 `build/classes/java/main/mixins.yes_steve_model.refmap.json`，并随 jar 打包。
 - **必须 `clean build`**：增量编译时 javac 不会把已有 class 再交给 AP，refmap 会变成 `{"mappings":{},"data":{}}`。`build.gradle` 的 `compileJava.doLast` 会校验 refmap 非空且包含关键映射，空 refmap 不会被打进 jar。
-- 原版 AP 0.8.7 只把 `@Shadow` **字段**写进 SRG 输出，不写进 JSON refmap；`compileJava.doLast` 会从 `mcp-srg.srg` 的 `FD:` 行查出 SRG 名并补进 refmap。新增 `@Shadow` 字段时必须在 `build.gradle` 的 `shadowFields` 里登记（mixin 类 → 字段 → [目标类, 描述符]），否则生产包里该字段映射不到。
+- 移植的 mixin **不使用 `@Shadow` 字段**：`ClickEvent.Action.NAME_MAPPING` 通过 `ObfuscationReflectionHelper`（同时给 MCP 名和 SRG 名）获取。原因是 MixinBooter 11.18 在正式环境不会应用 `@Shadow` 字段的 refmap 条目，会直接报 `@Shadow field ... was not located in the target class`。以后若确实需要 `@Shadow`，必须先解决该问题，不能只补 refmap。
 
 ## 模型侧说明（酒狐 / wine_fox）
 

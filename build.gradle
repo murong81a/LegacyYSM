@@ -157,49 +157,17 @@ compileJava {
             throw new GradleException("Mixin refmap has no mappings: ${mixinRefmap}")
         }
 
-        // Stock Mixin AP 0.8.7 skips @Shadow FIELDS in the JSON refmap. Declare
-        // every shadowed field here (mixin class -> field -> [target owner, desc]);
-        // the SRG name is read from mcp-srg.srg's "FD:" lines instead of being
-        // hardcoded, so this keeps working when mappings change.
-        def shadowFields = [
-                'com/elfmcys/yesstevemodel/mixin/early/ClickEventActionMixin': [
-                        'NAME_MAPPING': ['net/minecraft/util/text/event/ClickEvent$Action', 'Ljava/util/Map;']
-                ]
-        ]
-        def srgFieldNames = [:]
-        mcpSrg.eachLine('UTF-8') { line ->
-            if (line.startsWith('FD: ')) {
-                def parts = line.substring(4).trim().split(' ')
-                if (parts.length == 2) {
-                    int slash = parts[1].lastIndexOf('/')
-                    srgFieldNames[parts[0]] = parts[1].substring(slash + 1)
-                }
-            }
-        }
-        boolean refmapChanged = false
-        shadowFields.each { String mixinClass, Map fields ->
-            fields.each { String fieldName, List ownerAndDesc ->
-                String owner = ownerAndDesc[0]
-                String desc = ownerAndDesc[1]
-                String srgName = srgFieldNames["${owner}/${fieldName}"]
-                if (srgName == null) {
-                    throw new GradleException("No SRG field mapping for ${owner}.${fieldName}")
-                }
-                String member = "L${owner};${srgName}:${desc}"
-                refmap.mappings.computeIfAbsent(mixinClass, { [:] }).put(fieldName, member)
-                if (refmap.data?.searge instanceof Map) {
-                    refmap.data.searge.computeIfAbsent(mixinClass, { [:] }).put(fieldName, member)
-                }
-                refmapChanged = true
-            }
-        }
-        if (refmapChanged) {
-            mixinRefmap.setText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(refmap)), 'UTF-8')
-        }
+        // No @Shadow fields are used by the ported mixins: the one needed field
+        // (ClickEvent.Action.NAME_MAPPING) is fetched through
+        // ObfuscationReflectionHelper, because MixinBooter 11.18 does not apply
+        // refmap entries for @Shadow fields (verified in a production crash:
+        // "@Shadow field NAME_MAPPING was not located in the target class").
+        // If a future mixin really needs @Shadow, merge its field mapping here
+        // from mcp-srg.srg's "FD:" lines instead of hardcoding the SRG name.
 
         def required = [
                 'com/elfmcys/yesstevemodel/mixin/early/client/GuiScreenMixin': ['handleComponentClick'],
-                'com/elfmcys/yesstevemodel/mixin/early/ClickEventActionMixin': ['NAME_MAPPING', 'getValueByCanonicalName'],
+                'com/elfmcys/yesstevemodel/mixin/early/ClickEventActionMixin': ['getValueByCanonicalName'],
                 'com/elfmcys/yesstevemodel/mixin/early/EntityArrowMixin': ['readEntityFromNBT']
         ]
         required.each { className, members ->
