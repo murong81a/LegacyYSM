@@ -1,6 +1,5 @@
 package com.elfmcys.yesstevemodel.client.util;
 
-import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.elfmcys.yesstevemodel.client.ClientProxy;
 import com.elfmcys.yesstevemodel.client.entity.CustomPlayerEntity;
 import com.elfmcys.yesstevemodel.client.renderer.CustomPlayerRenderer;
@@ -44,11 +43,11 @@ import com.elfmcys.yesstevemodel.util.CompatUtil;
 
 /*
 1.16.5 - 1.12.2
-player.yBodyRot - player.renderYawOffset	韬綋杞悜瑙掑害
-player.yRot - player.rotationYaw	瑙嗗彛鍋忚埅瑙?
-player.xRot	- player.rotationPitch	瑙嗗彛淇话瑙?
-player.yHeadRot	- player.rotationYawHead	澶撮儴鍋忚埅瑙?
-player.yHeadRotO - player.prevRotationYawHead	涓婁竴鍒诲ご閮ㄥ亸鑸
+player.yBodyRot - player.renderYawOffset	身体转向角度
+player.yRot - player.rotationYaw	视口偏航角
+player.xRot	- player.rotationPitch	视口俯仰角
+player.yHeadRot	- player.rotationYawHead	头部偏航角
+player.yHeadRotO - player.prevRotationYawHead	上一刻头部偏航角
  */
 public final class RenderUtil {
     public static void renderTextureScreenEntity(float pPosX, float pPosY, float pScale, float pitch, float yaw, EntityPlayer player, ResourceLocation modelId, ResourceLocation textureId, boolean showGround, Consumer<CustomPlayerEntity> consumer) {
@@ -69,7 +68,7 @@ public final class RenderUtil {
                 GlStateManager.scale(1.0F, 1.0F, -1.0F);
 
                 /*
-                鍔ㄧ敾浣嶇Щ鐭╅樀寮€濮?
+                动画位移矩阵开始
                  */
                 GlStateManager.pushMatrix();
                 GlStateManager.translate(0.0D, 0.0D, 1000.0D);
@@ -114,7 +113,7 @@ public final class RenderUtil {
                     GlStateManager.rotate(yaw - 90, 0, 1, 0);
                     GlStateManager.translate(0.5, 0.5625, 0);
                     player.sleeping = true;
-                    // 鍘熺増鐨勫簥鐫″畬鍚庝笉浼氶噸缃繖鍑犱釜鐘舵€?
+                    // 原版的床睡完后不会重置这几个状态
                     player.bedLocation = null;
                     player.renderOffsetX = 0;
                     player.renderOffsetY = 0;
@@ -139,7 +138,7 @@ public final class RenderUtil {
                     GlStateManager.translate(0, -0.45, 0);
                 }
                 renderer.render(player, entity, 0, 0, 0, 0.0F, 1.0F);
-                // 娓呯悊瀹炰綋娓叉煋
+                // 清理实体渲染
                 GlStateManager.enableRescaleNormal();
                 GlStateManager.enableColorMaterial();
                 GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
@@ -151,7 +150,7 @@ public final class RenderUtil {
                 }
                 GlStateManager.popMatrix();
                 /*
-                鍔ㄧ敾浣嶇Щ鐭╅樀缁撴潫
+                动画位移矩阵结束
                  */
                 if (showGround) {
                     if (entity.hasPreviewAnimation("sleep")) {
@@ -230,7 +229,7 @@ public final class RenderUtil {
     }
 
     private static void renderSingleBlock(IBlockState state) {
-        GlStateManager.pushMatrix(); // 涓€瀹氳 push锛屽師鐗堟柟鍧楁覆鏌撲笉骞插噣
+        GlStateManager.pushMatrix(); // 一定要 push，原版方块渲染不干净
         final Minecraft mc = Minecraft.getMinecraft();
         mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
         mc.getBlockRendererDispatcher().renderBlockBrightness(state, 1.0F);
@@ -260,7 +259,7 @@ public final class RenderUtil {
         GlStateManager.rotate(yaw, 0, 1, 0);
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         dispatcher.doRenderEntity(entity, 0, -entity.getMountedYOffset() - player.getYOffset(), 0, 0.0F, 1.0F, false);
-        // 娓呯悊瀹炰綋娓叉煋
+        // 清理实体渲染
         GlStateManager.enableRescaleNormal();
         GlStateManager.enableColorMaterial();
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
@@ -380,6 +379,16 @@ public final class RenderUtil {
             i++;
         }
         GlStateManager.popMatrix();
+
+        // 1.12.2 原版在 renderModel 末尾会复位固定管线状态，移植时这几行被删掉了。
+        // 模型渲染结束时光照贴图纹理单元（GL_TEXTURE1）仍处于开启状态，光影包绑在
+        // 该单元上的纹理随后会被乘到每一个固定管线 GUI 图元上，表现为整屏发绿；
+        // 无光影时该单元是接近纯白的原版 lightmap，所以平时看不出来。
+        RenderHelper.disableStandardItemLighting();
+        GlStateManager.disableRescaleNormal();
+        GlStateManager.setActiveTexture(OpenGlHelper.lightmapTexUnit);
+        GlStateManager.disableTexture2D();
+        GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
     }
 
     public static void renderPlayerEntity(EntityPlayer player, double posX, double posY, float scale, float yawOffset, int z) {
@@ -397,7 +406,7 @@ public final class RenderUtil {
         yRot = 180.0F - yRot;
         renderDispatcher.setPlayerViewY(yRot);
         renderDispatcher.setRenderShadow(false);
-        renderDispatcher.doRenderEntity(player, 0, 0, 0, 0.0F, 1.0F, false); // 鏈€鍚庤繖涓弬鏁版槸闅愯棌纰版挒绠?
+        renderDispatcher.doRenderEntity(player, 0, 0, 0, 0.0F, 1.0F, false); // 最后这个参数是隐藏碰撞箱
         renderDispatcher.setRenderShadow(true);
         GlStateManager.popMatrix();
 
@@ -416,7 +425,7 @@ public final class RenderUtil {
     }
 
     /**
-     * 浣跨敤 GUI 鍍忕礌鍧愭爣鐨勮鍓柟娉曘€?
+     * 使用 GUI 像素坐标的裁剪方法。
      */
     public static void scissor(int screenX, int screenY, int boxWidth, int boxHeight) {
         final Minecraft mc = Minecraft.getMinecraft();
@@ -432,9 +441,9 @@ public final class RenderUtil {
     }
 
     /**
-     * 鎶婃枃瀛楁埅涓哄琛岋紝骞堕€愯鐢诲嚭銆?
+     * 把文字截为多行，并逐行画出。
      *
-     * @return 鏈€鍚庝竴琛岀殑鐩稿 Y 鍧愭爣銆?
+     * @return 最后一行的相对 Y 坐标。
      */
     @SuppressWarnings("UnusedReturnValue")
     public static int drawWordWrap(@Nonnull FontRenderer font, @Nullable String text, int x, int y, int wrapWidth, int color) {
@@ -453,8 +462,8 @@ public final class RenderUtil {
     }
 
     /**
-     * 鎶婂彲鑳藉寘鍚?{@code \n} 鎴栬€?{@code \\n} 鐨勬枃瀛楁埅涓哄琛屻€?br>
-     * {@link FontRenderer#listFormattedStringToWidth(String, int)} 鐨勪紭鍖栫増锛屽畠涓嶅彲浠ュ鐞嗘崲琛屻€?
+     * 把可能包含 {@code \n} 或者 {@code \\n} 的文字截为多行。<br>
+     * {@link FontRenderer#listFormattedStringToWidth(String, int)} 的优化版，它不可以处理换行。
      */
     public static List<String> listLineBreakStringToWidth(@Nonnull FontRenderer font, @Nullable String text, int wrapWidth) {
         final List<String> lineList = Lists.newArrayList();
@@ -470,40 +479,4 @@ public final class RenderUtil {
         }
         return lineList;
     }
-
-    /**
-     * 娓叉煋瀹?GUI 閲岀殑妯″瀷鍚庡浣嶅浐瀹氱绾跨姸鎬併€?
-     * <p>
-     * 鍏夊奖锛圤ptiFine锛変笅妯″瀷娓叉煋鍙兘鐣欎笅鍏夌収/棰滆壊鏉愯川/娣峰悎鐘舵€侊紝瀵艰嚧鍚庨潰鐨?GUI
-     * 鎺т欢锛堟寜閽€佹枃瀛楋級琚煋鑹叉垨杩囦寒銆傝繖閲岀粺涓€澶嶄綅锛屽苟淇濇寔娣卞害娴嬭瘯鍏抽棴锛圙UI 鎯緥锛夈€?
-     * <p>
-     * 鍔?{@code -Dysm.debugGl=true} 鍚姩鏃朵細鍦ㄩ娆¤皟鐢ㄦ墦鍗颁竴娆?GL 鐘舵€侊紝渚夸簬鎺掓煡
-     * 鍏夊奖鐜涓?GUI 鍙戠豢/琚鍓殑闂銆?
-     */
-    public static void resetGuiRenderState() {
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        GlStateManager.disableLighting();
-        GlStateManager.disableColorMaterial();
-        GlStateManager.disableRescaleNormal();
-        GlStateManager.enableTexture2D();
-        GlStateManager.enableBlend();
-        GlStateManager.tryBlendFuncSeparate(
-                GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
-                GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
-        if (!DEBUG_GL_LOGGED && Boolean.getBoolean("ysm.debugGl")) {
-            DEBUG_GL_LOGGED = true;
-            // 0x8B8D = GL_CURRENT_PROGRAM, 0x8CA6 = GL_FRAMEBUFFER_BINDING(GL_FRAMEBUFFER)
-            YesSteveModel.LOGGER.info(
-                    "[ysm] GUI GL state: depthTest={} lighting={} colorMaterial={} blend={} program={} fbo={}",
-                    GL11.glGetBoolean(GL11.GL_DEPTH_TEST),
-                    GL11.glGetBoolean(GL11.GL_LIGHTING),
-                    GL11.glGetBoolean(GL11.GL_COLOR_MATERIAL),
-                    GL11.glGetBoolean(GL11.GL_BLEND),
-                    GL11.glGetInteger(0x8B8D),
-                    GL11.glGetInteger(0x8CA6));
-        }
-    }
-
-    private static boolean DEBUG_GL_LOGGED = false;
 }
-

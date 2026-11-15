@@ -208,13 +208,12 @@ public class PlayerModelScreen extends Screen {
 
         this.textField.drawTextBox();
         RenderUtil.scissor(this.x + 5, this.y + 29, 125, 171);
-        // 光影下 glClear(GL_DEPTH) 可能清到别的缓冲，直接关深度测试更可靠；
-        // 渲染后统一复位颜色/光照/混合状态，避免漏到后面的 GUI 控件上。
-        GlStateManager.disableDepth();
-        RenderUtil.resetGuiRenderState();
+        // 清深度并复位颜色：否则世界深度（含光影的深度附件）会把预览裁掉，模型颜色也会漏到 GUI 上
+        GlStateManager.clear(GL11.GL_DEPTH_BUFFER_BIT);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         GuiInventory.drawEntityOnScreen(this.x + 67, this.y + 195, 64, this.x + 67 - mouseX, this.y + 190 - 95 - mouseY, this.player);
-        RenderUtil.resetGuiRenderState();
         GlStateManager.disableDepth();
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         GL11.glDisable(GL11.GL_SCISSOR_TEST);
 
         CapabilityEvent.getModelInfoCap(this.player).ifPresent(cap -> {
