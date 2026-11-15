@@ -178,7 +178,8 @@ public class YSMBinding extends ContextBinding {
         this.arrowEntityVar("is_spectral_arrow", ctx -> ctx.entity() instanceof EntitySpectralArrow);
         this.arrowEntityVar("shoot_item_id", ctx -> {
             if (ctx.entity().shootingEntity instanceof EntityLivingBase shooter) {
-                ResourceLocation id = shooter.getHeldItemMainhand().getItem().getRegistryName();
+                net.minecraft.item.ItemStack held = shooter.getHeldItemMainhand();
+                ResourceLocation id = held == null ? null : held.getItem().getRegistryName();
                 return id == null ? "" : id.toString();
             }
             return "";

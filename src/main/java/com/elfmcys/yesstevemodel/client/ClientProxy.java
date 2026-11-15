@@ -7,10 +7,13 @@ import com.elfmcys.yesstevemodel.client.compat.Mods;
 import com.elfmcys.yesstevemodel.client.entity.CustomArrowEntity;
 import com.elfmcys.yesstevemodel.client.entity.CustomPlayerEntity;
 import com.elfmcys.yesstevemodel.client.input.*;
+import com.elfmcys.yesstevemodel.client.renderer.ArrowRenderDispatcher;
 import com.elfmcys.yesstevemodel.client.renderer.CustomArrowRenderer;
 import com.elfmcys.yesstevemodel.client.renderer.CustomPlayerRenderer;
+import com.elfmcys.yesstevemodel.client.renderer.CustomRenderPlayer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.RenderManager;
+import net.minecraft.entity.projectile.EntityArrow;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
@@ -51,6 +54,13 @@ public class ClientProxy extends CommonProxy {
         RenderManager context = Minecraft.getMinecraft().getRenderManager();
         CUSTOM_PLAYER_RENDERER = new CustomPlayerRenderer(context);
         CUSTOM_ARROW_RENDERER = new CustomArrowRenderer(context);
+
+        // 1.10.2 无 mixin：用渲染器分发器代替 1.12.2 的 RenderArrowMixin
+        context.entityRenderMap.put(EntityArrow.class, new ArrowRenderDispatcher(context));
+
+        // 1.10.2 无 mixin：玩家渲染器在 RenderManager 的 skinMap 里（不是 entityRenderMap），
+        // 换成子类以代替 1.12.2 的 RenderPlayerMixin（第一人称手臂）
+        CustomRenderPlayer.register(context);
     }
 
     private static void registerCapability() {

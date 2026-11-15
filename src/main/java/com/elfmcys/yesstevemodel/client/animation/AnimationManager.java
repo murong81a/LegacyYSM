@@ -341,6 +341,10 @@ public final class AnimationManager {
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private static boolean isSameItem(CustomPlayerEntity animatable, ItemStack itemStack, EnumHand hand) {
         ItemStack preItem = animatable.getHandItemsForAnimation()[hand.ordinal()];
+        // 1.10.2 uses null for an empty stack (1.12.2 used ItemStack.EMPTY).
+        if (itemStack == null || preItem == null) {
+            return itemStack == null && preItem == null;
+        }
         if (preItem.isItemDamaged()) {
             return ItemStack.areItemsEqual(itemStack, preItem);
         }

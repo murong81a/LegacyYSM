@@ -378,6 +378,7 @@ public final class RenderUtil {
             }
             i++;
         }
+        GlStateManager.popMatrix();
     }
 
     public static void renderPlayerEntity(EntityPlayer player, double posX, double posY, float scale, float yawOffset, int z) {
