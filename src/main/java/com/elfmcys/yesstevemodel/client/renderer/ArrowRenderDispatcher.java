@@ -24,8 +24,10 @@ import java.util.Optional;
  * 在 {@code RenderManager#entityRenderMap} 里把 {@code EntityArrow} 的渲染器换成这个分发器，
  * 命中模型时委派给 {@link CustomArrowRenderer}，否则回落到原版 {@link RenderArrow} 逻辑。
  * <p>
- * 只接管 {@code EntityArrow} 本身，{@code EntityTippedArrow} / {@code EntitySpectralArrow}
- * 在注册表里各自有独立渲染器，不受影响。
+ * 1.10.2 的 {@code RenderManager#entityRenderMap} 是精确类查表，子类不会走到这里，
+ * 所以 {@code EntityTippedArrow} / {@code EntitySpectralArrow} 各自由
+ * {@link TippedArrowRenderDispatcher} / {@link SpectralArrowRenderDispatcher} 接管，
+ * 它们复用本类的 {@link #tryRenderCustomModel} 判定，未命中时回落原版渲染。
  */
 public class ArrowRenderDispatcher extends RenderArrow<EntityArrow> {
 
@@ -45,7 +47,7 @@ public class ArrowRenderDispatcher extends RenderArrow<EntityArrow> {
      * 与 {@code RenderArrowMixin} 的判定保持一致：开关打开、有箭矢模型能力、
      * 模型 id 非空且模型确实加载成功时才接管渲染。
      */
-    private static boolean tryRenderCustomModel(EntityArrow entity, double x, double y, double z, float entityYaw, float partialTick) {
+    static boolean tryRenderCustomModel(EntityArrow entity, double x, double y, double z, float entityYaw, float partialTick) {
         if (GeneralConfig.DISABLE_ARROWS_MODEL) {
             return false;
         }

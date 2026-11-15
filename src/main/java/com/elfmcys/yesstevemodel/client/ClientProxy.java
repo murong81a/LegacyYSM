@@ -11,9 +11,13 @@ import com.elfmcys.yesstevemodel.client.renderer.ArrowRenderDispatcher;
 import com.elfmcys.yesstevemodel.client.renderer.CustomArrowRenderer;
 import com.elfmcys.yesstevemodel.client.renderer.CustomPlayerRenderer;
 import com.elfmcys.yesstevemodel.client.renderer.CustomRenderPlayer;
+import com.elfmcys.yesstevemodel.client.renderer.SpectralArrowRenderDispatcher;
+import com.elfmcys.yesstevemodel.client.renderer.TippedArrowRenderDispatcher;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.entity.projectile.EntityArrow;
+import net.minecraft.entity.projectile.EntitySpectralArrow;
+import net.minecraft.entity.projectile.EntityTippedArrow;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
@@ -57,6 +61,9 @@ public class ClientProxy extends CommonProxy {
 
         // 1.10.2 无 mixin：用渲染器分发器代替 1.12.2 的 RenderArrowMixin
         context.entityRenderMap.put(EntityArrow.class, new ArrowRenderDispatcher(context));
+        // RenderArrowMixin 原来对 RenderArrow 的所有子类生效，这里补齐 tipped / spectral
+        context.entityRenderMap.put(EntityTippedArrow.class, new TippedArrowRenderDispatcher(context));
+        context.entityRenderMap.put(EntitySpectralArrow.class, new SpectralArrowRenderDispatcher(context));
 
         // 1.10.2 无 mixin：玩家渲染器在 RenderManager 的 skinMap 里（不是 entityRenderMap），
         // 换成子类以代替 1.12.2 的 RenderPlayerMixin（第一人称手臂）
