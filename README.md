@@ -35,6 +35,13 @@ gradle build --no-daemon -I init-mirror.gradle
 - F11 全屏崩溃：coremod 把 `Minecraft.toggleFullscreen()V` 改成空实现，可用 `-Dysm.blockFullscreen=false` 恢复原版行为。
 - GUI 里渲染模型必须自己管好深度：1.10.2 的 GUI 覆盖层在光影下不保证清过深度缓冲，模型会按世界深度被裁掉（“抬头看不见”）。
 
+## Mixin / MixinBooter
+
+- 运行时依赖 **MixinBooter 11.18**（`!mixinbooter-11.18.jar` 放进 `mods`，`!` 保证 coremod 先加载）。`mcmod.info` 已声明 `required-after:mixinbooter`，缺装时 FML 会直接提示，而不是在 coremod 阶段报晦涩错误。
+- 生产 refmap 由 `org.spongepowered:mixin:0.8.7` 的 Annotation Processor 在 `compileJava` 时生成，输出到 `build/classes/java/main/mixins.yes_steve_model.refmap.json`，并随 jar 打包。
+- **必须 `clean build`**：增量编译时 javac 不会把已有 class 再交给 AP，refmap 会变成 `{"mappings":{},"data":{}}`。`build.gradle` 的 `compileJava.doLast` 会校验 refmap 非空且包含关键映射，空 refmap 不会被打进 jar。
+- 原版 AP 0.8.7 只把 `@Shadow` **字段**写进 SRG 输出，不写进 JSON refmap；`compileJava.doLast` 会从 `mcp-srg.srg` 的 `FD:` 行查出 SRG 名并补进 refmap。新增 `@Shadow` 字段时必须在 `build.gradle` 的 `shadowFields` 里登记（mixin 类 → 字段 → [目标类, 描述符]），否则生产包里该字段映射不到。
+
 ## 模型侧说明（酒狐 / wine_fox）
 
 - 人形与狐狸在同一 `main.json` 中，狐狸是 `FOX` 骨骼子树；平时由常驻并行动画 `parallel1` 用 `FOX.scale = v.roaming.a`、`AllBody.scale = 1 - v.roaming.a` 来二选一显示。

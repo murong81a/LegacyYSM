@@ -10,6 +10,7 @@ import com.elfmcys.yesstevemodel.geckolib3.core.event.predicate.AnimationEvent;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.binding.ContextBinding;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.builtin.query.EmptyFunction;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.context.IContext;
+import com.elfmcys.yesstevemodel.mixininterface.EntityArrowAccessor;
 import com.elfmcys.yesstevemodel.util.ComponentUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -176,14 +177,11 @@ public class YSMBinding extends ContextBinding {
         this.arrowEntityVar("on_ground_time", ctx -> ctx.entity().timeInGround);
         this.arrowEntityVar("in_ground", ctx -> ctx.entity().inGround);
         this.arrowEntityVar("is_spectral_arrow", ctx -> ctx.entity() instanceof EntitySpectralArrow);
-        this.arrowEntityVar("shoot_item_id", ctx -> {
-            if (ctx.entity().shootingEntity instanceof EntityLivingBase shooter) {
-                net.minecraft.item.ItemStack held = shooter.getHeldItemMainhand();
-                ResourceLocation id = held == null ? null : held.getItem().getRegistryName();
-                return id == null ? "" : id.toString();
-            }
-            return "";
-        });
+        // The value is captured by EntityArrowMixin at spawn time (the shooter's
+        // main hand at that moment), matching 1.12.2 semantics; reading the
+        // shooter's current hand here would change after switching items.
+        this.arrowEntityVar("shoot_item_id",
+                ctx -> ((EntityArrowAccessor) ctx.entity()).ysm$getShootItemId());
 
         // TODO：饰品栏
         this.function("has_any_curios", new EmptyFunction());

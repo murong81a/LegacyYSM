@@ -28,18 +28,63 @@ minecraft {
 }
 
 repositories {
+    maven { url = 'https://maven.cleanroommc.com' }
     maven { url = 'https://mirrors.ustc.edu.cn/bmclapi/' }
     maven { url = 'https://maven.aliyun.com/repository/public' }
     maven { url = 'https://libraries.minecraft.net' }
+    // The standalone Mixin jar is also the annotation processor (Mixin AP).
+    maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
 }
 
 def jabelHome = file('D:/MuRong/cwsgi12313/MRPlus/_tmp/ysm/env/jabel')
+
+// Mixin AP output. Keep the name in sync with "refmap" in the Mixin configs.
+def mixinRefmap = file("$buildDir/classes/java/main/mixins.yes_steve_model.refmap.json")
+// ForgeGradle 2.3 downloads MCP stable_29 here during setup.
+def mcpSrg = file("${gradle.gradleUserHomeDir}/caches/minecraft/de/oceanlabs/mcp/mcp_stable/29/1.10.2/srgs/mcp-srg.srg")
+
+configurations {
+    // Annotation processor only: never shipped in the mod jar or runtime classpath.
+    mixinAP
+}
 
 dependencies {
     // Jabel turns the Java 16+ syntax used by the sources into Java 8 bytecode.
     // The javac plugin itself must also be on the compilation classpath because
     // the sources import com.github.bsideup.jabel.Desugar.
     compileOnly files("$jabelHome/jabel-javac-plugin-1.0.0.jar",
+            "$jabelHome/byte-buddy-1.12.18.jar",
+            "$jabelHome/byte-buddy-agent-1.12.18.jar",
+            "$jabelHome/jna-5.12.1.jar")
+
+    // MixinBooter ships the Mixin runtime (CleanMix fork) plus
+    // zone.rong.mixinbooter.IEarlyMixinLoader for MC 1.8 - 1.12.2.
+    // transitive=false: cleanmix / mixinextras are shaded into its jar, and
+    // asm/gson/guava are already supplied by Minecraft/Forge at runtime.
+    // It is NOT bundled into our jar: users must drop !mixinbooter-11.18.jar into
+    // the mods folder (leading '!' so FML loads its coremod before ours).
+    //
+    // 11.18 and not 12.3: 12.x ModDiscoverer references
+    // org.apache.maven.artifact.versioning.*, which Forge 1.10.2 does not ship,
+    // and MixinBooterPlugin's constructor calls it while resolving the primary
+    // container -> NoClassDefFoundError before any mixin is applied. Verified:
+    // 11.18's ModDiscoverer has no maven references at all.
+    compile('zone.rong:mixinbooter:11.18') { transitive = false }
+
+    // Mixin 0.8.7 is the AP that matches the Mixin runtime bundled by
+    // MixinBooter 11.18. Its dependencies are supplied explicitly because the
+    // AP runs inside the JDK 17 javac process, not on the mod runtime classpath.
+    mixinAP('org.spongepowered:mixin:0.8.7') { transitive = false }
+    mixinAP 'com.google.code.gson:gson:2.2.4'
+    mixinAP 'com.google.guava:guava:18.0'
+    mixinAP 'org.ow2.asm:asm:9.1'
+    mixinAP 'org.ow2.asm:asm-tree:9.1'
+    mixinAP 'org.ow2.asm:asm-commons:9.1'
+    mixinAP 'org.ow2.asm:asm-analysis:9.1'
+    mixinAP 'org.ow2.asm:asm-util:9.1'
+    // javac resolves -Xplugin:jabel through the processor path once
+    // annotationProcessorPath is set explicitly.
+    mixinAP files("$jabelHome/jabel-javac-plugin-1.0.0.jar",
             "$jabelHome/byte-buddy-1.12.18.jar",
             "$jabelHome/byte-buddy-agent-1.12.18.jar",
             "$jabelHome/jna-5.12.1.jar")
@@ -63,8 +108,12 @@ jar {
 }
 
 // Dev runs don't read FMLCorePlugin from the jar manifest, so load it explicitly.
+// MixinBooter's coremod must be listed here as well: it is what turns
+// YsmCorePlugin (an IEarlyMixinLoader) into real Mixin configurations.
+// Order matters - MixinBooterPlugin first.
 tasks.matching { it.name == 'runClient' }.all {
-    jvmArgs '-Dfml.coreMods.load=com.elfmcys.yesstevemodel.core.YsmCorePlugin', '-Dysm.blockFullscreen=true'
+    jvmArgs '-Dfml.coreMods.load=zone.rong.mixinbooter.MixinBooterPlugin,com.elfmcys.yesstevemodel.core.YsmCorePlugin',
+            '-Dysm.blockFullscreen=true'
 }
 
 compileJava {
@@ -74,6 +123,97 @@ compileJava {
     // need a JDK 17 parser. Jabel makes it emit Java 8 (major 52) bytecode.
     options.fork = true
     options.forkOptions.executable = 'D:/JAVA/zulu-jdk17.0.21.0.3/bin/javac.exe'
+
+    // Generate the production SRG refmap at compile time. The AP sees the
+    // deobfuscated (MCP/SRG-named) sources and writes the obfuscated names into
+    // the refmap; the jar then carries it next to the mixin config.
+    // Stock Mixin AP 0.8.7 does not emit @Shadow field mappings into the JSON
+    // refmap (only into the SRG output), so doLast adds those from mcp-srg.srg.
+    options.annotationProcessorPath = configurations.mixinAP
+    options.compilerArgs += [
+            "-AoutRefMapFile=${mixinRefmap.absolutePath}",
+            "-AreobfSrgFile=${mcpSrg.absolutePath}",
+            '-AmappingTypes=searge',
+            '-AdefaultObfuscationEnv=searge',
+            '-AMSG_NO_OBFDATA_FOR_SHADOW=warning',
+            '-AMSG_NO_OBFDATA_FOR_SIMULATED_SHADOW=warning',
+            '-AMSG_SHADOW_ON_NON_MIXIN_ELEMENT=warning',
+            '-AMSG_TARGET_ELEMENT_NOT_FOUND=warning'
+    ]
+    doFirst {
+        if (!mcpSrg.isFile()) {
+            throw new GradleException("MCP SRG file not found: ${mcpSrg}")
+        }
+        mixinRefmap.parentFile.mkdirs()
+    }
+    doLast {
+        // Never package a missing or empty refmap: the production jar would then
+        // contain unresolved MCP names instead of SRG names.
+        if (!mixinRefmap.isFile()) {
+            throw new GradleException("Mixin refmap was not generated: ${mixinRefmap}")
+        }
+        def refmap = new groovy.json.JsonSlurper().parseText(mixinRefmap.getText('UTF-8'))
+        if (!(refmap.mappings instanceof Map) || refmap.mappings.isEmpty()) {
+            throw new GradleException("Mixin refmap has no mappings: ${mixinRefmap}")
+        }
+
+        // Stock Mixin AP 0.8.7 skips @Shadow FIELDS in the JSON refmap. Declare
+        // every shadowed field here (mixin class -> field -> [target owner, desc]);
+        // the SRG name is read from mcp-srg.srg's "FD:" lines instead of being
+        // hardcoded, so this keeps working when mappings change.
+        def shadowFields = [
+                'com/elfmcys/yesstevemodel/mixin/early/ClickEventActionMixin': [
+                        'NAME_MAPPING': ['net/minecraft/util/text/event/ClickEvent$Action', 'Ljava/util/Map;']
+                ]
+        ]
+        def srgFieldNames = [:]
+        mcpSrg.eachLine('UTF-8') { line ->
+            if (line.startsWith('FD: ')) {
+                def parts = line.substring(4).trim().split(' ')
+                if (parts.length == 2) {
+                    int slash = parts[1].lastIndexOf('/')
+                    srgFieldNames[parts[0]] = parts[1].substring(slash + 1)
+                }
+            }
+        }
+        boolean refmapChanged = false
+        shadowFields.each { String mixinClass, Map fields ->
+            fields.each { String fieldName, List ownerAndDesc ->
+                String owner = ownerAndDesc[0]
+                String desc = ownerAndDesc[1]
+                String srgName = srgFieldNames["${owner}/${fieldName}"]
+                if (srgName == null) {
+                    throw new GradleException("No SRG field mapping for ${owner}.${fieldName}")
+                }
+                String member = "L${owner};${srgName}:${desc}"
+                refmap.mappings.computeIfAbsent(mixinClass, { [:] }).put(fieldName, member)
+                if (refmap.data?.searge instanceof Map) {
+                    refmap.data.searge.computeIfAbsent(mixinClass, { [:] }).put(fieldName, member)
+                }
+                refmapChanged = true
+            }
+        }
+        if (refmapChanged) {
+            mixinRefmap.setText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(refmap)), 'UTF-8')
+        }
+
+        def required = [
+                'com/elfmcys/yesstevemodel/mixin/early/client/GuiScreenMixin': ['handleComponentClick'],
+                'com/elfmcys/yesstevemodel/mixin/early/ClickEventActionMixin': ['NAME_MAPPING', 'getValueByCanonicalName'],
+                'com/elfmcys/yesstevemodel/mixin/early/EntityArrowMixin': ['readEntityFromNBT']
+        ]
+        required.each { className, members ->
+            def classMappings = refmap.mappings[className]
+            if (!(classMappings instanceof Map)) {
+                throw new GradleException("Mixin refmap is missing class ${className}: ${mixinRefmap}")
+            }
+            members.each { member ->
+                if (!classMappings.containsKey(member)) {
+                    throw new GradleException("Mixin refmap is missing ${className}.${member}: ${mixinRefmap}")
+                }
+            }
+        }
+    }
 }
 
 task dumpcp {

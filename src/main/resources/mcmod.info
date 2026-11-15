@@ -8,5 +8,6 @@
     "credits": "bernie-g (GeckoLib), fadookie (mclib), TT432 & SQwatermark",
     "license": "BSD-3-Clause",
     "url": "https://github.com/RuiXuqi/YesSteveModel",
-    "logoFile": "yesstevemodel.png"
+    "logoFile": "yesstevemodel.png",
+    "dependencies": ["required-after:mixinbooter"]
 }]

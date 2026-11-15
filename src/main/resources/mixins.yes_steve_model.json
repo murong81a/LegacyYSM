@@ -1,0 +1,16 @@
+{
+  "package": "com.elfmcys.yesstevemodel.mixin.early",
+  "required": true,
+  "refmap": "mixins.yes_steve_model.refmap.json",
+  "target": "@env(DEFAULT)",
+  "minVersion": "0.8",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "ClickEventActionMixin",
+    "EntityArrowMixin"
+  ],
+  "server": [],
+  "client": [
+    "client.GuiScreenMixin"
+  ]
+}

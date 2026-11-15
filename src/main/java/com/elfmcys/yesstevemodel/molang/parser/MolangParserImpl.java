@@ -29,6 +29,7 @@ import com.elfmcys.yesstevemodel.molang.lexer.Token;
 import com.elfmcys.yesstevemodel.molang.lexer.TokenKind;
 import com.elfmcys.yesstevemodel.molang.parser.ast.*;
 import com.elfmcys.yesstevemodel.molang.runtime.Function;
+import com.elfmcys.yesstevemodel.molang.runtime.Variable;
 import com.elfmcys.yesstevemodel.molang.runtime.binding.ObjectBinding;
 
 import javax.annotation.Nonnull;
@@ -42,6 +43,9 @@ import static java.util.Objects.requireNonNull;
 final class MolangParserImpl implements MolangParser {
     private static final int PRECEDENCE_QUES = 1400;   // 三元条件运算符优先级的值必须与其他运算符不同
     private static final Object UNSET_FLAG = new Object();
+
+    // the 'null' literal: a variable that always evaluates to a null value
+    private static final Variable NULL_VARIABLE = context -> null;
 
     private final MolangLexer lexer;
     private final ObjectBinding binding;
@@ -77,6 +81,9 @@ final class MolangParserImpl implements MolangParser {
             case FALSE:
                 lexer.next();
                 return DoubleExpression.ZERO;
+            case NULL:
+                lexer.next();
+                return new VariableExpression(NULL_VARIABLE);
             case LPAREN:
                 lexer.next();
                 // wrapped expression: (expression)

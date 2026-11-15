@@ -77,6 +77,11 @@ public enum TokenKind {
     FALSE,
 
     /**
+     * 'Null' literal token
+     */
+    NULL,
+
+    /**
      * The "break" keyword
      */
     BREAK,
