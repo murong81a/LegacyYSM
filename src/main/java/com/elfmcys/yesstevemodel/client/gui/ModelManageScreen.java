@@ -78,7 +78,7 @@ public class ModelManageScreen extends Screen {
             }));
         }
         if (this.action == Action.RENAME) {
-            this.textField = new GuiTextField(0, this.fontRenderer, this.x + 270, this.y + 51, 145, 14);
+            this.textField = new GuiTextField(0, this.fontRendererObj, this.x + 270, this.y + 51, 145, 14);
             this.textField.setTextColor(0xF3EFE0);
             this.textField.setMaxStringLength(24);
             RequestServerModelInfo.Info info = this.getModels().get(this.index);
@@ -264,32 +264,32 @@ public class ModelManageScreen extends Screen {
         this.drawGradientRect(this.x + 265, this.y, this.x + 420, this.y + 235, 0xff_222222, 0xff_222222);
         this.drawGradientRect(this.x + 270, this.y + 5, this.x + 415, this.y + 23, 0xff_434242, 0xff_434242);
 
-        this.drawCenteredString(this.fontRenderer, I18n.format("gui.yes_steve_model.model_manage.action_info"), this.x + 342, this.y + 11, 0xFFFFFF);
-        this.drawString(this.fontRenderer, String.format("%d/%d", page + 1, (this.modelsCount - 1) / MAX_COUNT + 1), this.x + 120, this.y + 33, 0xFFFFFF);
+        this.drawCenteredString(this.fontRendererObj, I18n.format("gui.yes_steve_model.model_manage.action_info"), this.x + 342, this.y + 11, 0xFFFFFF);
+        this.drawString(this.fontRendererObj, String.format("%d/%d", page + 1, (this.modelsCount - 1) / MAX_COUNT + 1), this.x + 120, this.y + 33, 0xFFFFFF);
 
         if (this.action == Action.UPLOAD) {
             String folder = isCustomModels ? I18n.format("gui.yes_steve_model.model_manage.custom") : I18n.format("gui.yes_steve_model.model_manage.auth");
             String actionName = I18n.format("gui.yes_steve_model.model_manage." + this.action.name().toLowerCase(Locale.US));
-            this.drawString(this.fontRenderer, I18n.format("gui.yes_steve_model.model_manage.selected", TextFormatting.RESET + folder), this.x + 272, this.y + 29, 0xFFFFFF);
-            this.drawString(this.fontRenderer, I18n.format("gui.yes_steve_model.model_manage.action", TextFormatting.RESET + actionName), this.x + 272, this.y + 39, 0xFFFFFF);
+            this.drawString(this.fontRendererObj, I18n.format("gui.yes_steve_model.model_manage.selected", TextFormatting.RESET + folder), this.x + 272, this.y + 29, 0xFFFFFF);
+            this.drawString(this.fontRendererObj, I18n.format("gui.yes_steve_model.model_manage.action", TextFormatting.RESET + actionName), this.x + 272, this.y + 39, 0xFFFFFF);
             String uploadStatue = I18n.format("gui.yes_steve_model.model_manage.upload.statue." + UploadManager.STATUE.name().toLowerCase(Locale.US));
-            this.drawString(this.fontRenderer, I18n.format("gui.yes_steve_model.model_manage.upload.statue", TextFormatting.RESET + uploadStatue), this.x + 272, this.y + 49, 0xFFFFFF);
+            this.drawString(this.fontRendererObj, I18n.format("gui.yes_steve_model.model_manage.upload.statue", TextFormatting.RESET + uploadStatue), this.x + 272, this.y + 49, 0xFFFFFF);
             String fileUpload = I18n.format("gui.yes_steve_model.model_manage.file.empty");
             if (StringUtils.isNoneBlank(UploadManager.FILE_PATH)) {
                 fileUpload = UploadManager.FILE_PATH;
             }
-            int yOffset = RenderUtil.drawWordWrap(this.fontRenderer, I18n.format("gui.yes_steve_model.model_manage.file", TextFormatting.RESET + fileUpload), this.x + 272, this.y + 59, 145, 0xFFFFFF);
+            int yOffset = RenderUtil.drawWordWrap(this.fontRendererObj, I18n.format("gui.yes_steve_model.model_manage.file", TextFormatting.RESET + fileUpload), this.x + 272, this.y + 59, 145, 0xFFFFFF);
             if (this.uploadError != null) {
-                RenderUtil.drawWordWrap(this.fontRenderer, this.uploadError, this.x + 272, this.y + 60 + yOffset, 145, 0xFFFFFF);
+                RenderUtil.drawWordWrap(this.fontRendererObj, this.uploadError, this.x + 272, this.y + 60 + yOffset, 145, 0xFFFFFF);
             }
         }
 
         if (this.index >= 0 && this.index < this.getModels().size() && this.action != Action.UPLOAD) {
             RequestServerModelInfo.Info info = this.getModels().get(this.index);
-            this.drawString(this.fontRenderer, I18n.format("gui.yes_steve_model.model_manage.selected", TextFormatting.RESET + info.getFullFileName()), this.x + 272, this.y + 29, 0xFFFFFF);
+            this.drawString(this.fontRendererObj, I18n.format("gui.yes_steve_model.model_manage.selected", TextFormatting.RESET + info.getFullFileName()), this.x + 272, this.y + 29, 0xFFFFFF);
             if (this.action != Action.EMPTY) {
                 String actionName = I18n.format("gui.yes_steve_model.model_manage." + this.action.name().toLowerCase(Locale.US));
-                this.drawString(this.fontRenderer, I18n.format("gui.yes_steve_model.model_manage.action", TextFormatting.RESET + actionName), this.x + 272, this.y + 39, 0xFFFFFF);
+                this.drawString(this.fontRendererObj, I18n.format("gui.yes_steve_model.model_manage.action", TextFormatting.RESET + actionName), this.x + 272, this.y + 39, 0xFFFFFF);
             }
             if (this.action == Action.RENAME && this.textField != null) {
                 this.textField.drawTextBox();

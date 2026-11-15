@@ -34,9 +34,9 @@ public class StarButton extends FlatColorButton {
         CapabilityEvent.getModelInfoCap(player).ifPresent(modelInfoCap -> CapabilityEvent.getStarModelsCap(player).ifPresent(starModelsCap -> {
             ResourceLocation modelId = modelInfoCap.getModelId();
             if (starModelsCap.containModel(modelId)) {
-                this.drawTexturedModalRect(this.x + startX, this.y + startY, 16, 0, 16, 16);
+                this.drawTexturedModalRect(this.xPosition + startX, this.yPosition + startY, 16, 0, 16, 16);
             } else {
-                this.drawTexturedModalRect(this.x + startX, this.y + startY, 0, 0, 16, 16);
+                this.drawTexturedModalRect(this.xPosition + startX, this.yPosition + startY, 0, 0, 16, 16);
             }
         }));
     }

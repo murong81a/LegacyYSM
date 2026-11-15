@@ -102,7 +102,7 @@ public class PlayerModelScreen extends Screen {
             perText = this.textField.getText();
             focus = this.textField.isFocused();
         }
-        this.textField = new GuiTextField(0, this.fontRenderer, this.x + 144, this.y + 6, 140, 16);
+        this.textField = new GuiTextField(0, this.fontRendererObj, this.x + 144, this.y + 6, 140, 16);
         this.textField.setText(perText);
         this.textField.setTextColor(0xF3EFE0);
         this.textField.setFocused(focus);
@@ -119,7 +119,7 @@ public class PlayerModelScreen extends Screen {
         }).setTooltips("gui.yes_steve_model.model.texture"));
         this.addButton(new StarButton(this.x + 110, this.y + 5));
 
-        this.addButton(new ConfigCheckBox(this.x + 5, this.y - 22, "show_model_id_first", this.fontRenderer,
+        this.addButton(new ConfigCheckBox(this.x + 5, this.y - 22, "show_model_id_first", this.fontRendererObj,
                 GeneralConfig.SHOW_MODEL_ID_FIRST, value -> GeneralConfig.SHOW_MODEL_ID_FIRST = value) {
             @Override
             public void onPress() {
@@ -215,24 +215,24 @@ public class PlayerModelScreen extends Screen {
             if (extraInfo != null && extraInfo.getName() != null && !extraInfo.getName().isEmpty()) {
                 modelName = extraInfo.getName();
             }
-            List<String> modelNameSplit = this.fontRenderer.listFormattedStringToWidth(modelName, 125);
+            List<String> modelNameSplit = this.fontRendererObj.listFormattedStringToWidth(modelName, 125);
             int lineY = this.y + 205;
             for (String line : modelNameSplit) {
-                int nameWidth = this.fontRenderer.getStringWidth(line);
-                this.drawString(this.fontRenderer, line, this.x + (135 - nameWidth) / 2, lineY, 0xF3EFE0);
+                int nameWidth = this.fontRendererObj.getStringWidth(line);
+                this.drawString(this.fontRendererObj, line, this.x + (135 - nameWidth) / 2, lineY, 0xF3EFE0);
                 lineY += 10;
             }
         });
 
         if (this.textField.getText().isEmpty() && !this.textField.isFocused()) {
-            this.drawString(this.fontRenderer, TextFormatting.ITALIC + I18n.format("gui.yes_steve_model.search"), this.x + 148, this.y + 10, 0x777777);
+            this.drawString(this.fontRendererObj, TextFormatting.ITALIC + I18n.format("gui.yes_steve_model.search"), this.x + 148, this.y + 10, 0x777777);
         }
 
         String pageInfo = String.format("%d/%d", this.page + 1, this.maxPage + 1);
-        this.drawString(this.fontRenderer, pageInfo, this.x + 138 + (282 - this.fontRenderer.getStringWidth(pageInfo)) / 2, this.y + 223 - this.fontRenderer.FONT_HEIGHT / 2, 0xF3EFE0);
+        this.drawString(this.fontRendererObj, pageInfo, this.x + 138 + (282 - this.fontRendererObj.getStringWidth(pageInfo)) / 2, this.y + 223 - this.fontRendererObj.FONT_HEIGHT / 2, 0xF3EFE0);
 
         String debugInfo = String.format("%s-%s", Loader.MC_VERSION, Tags.VERSION);
-        this.drawString(this.fontRenderer, TextFormatting.DARK_GRAY + debugInfo, this.x + 2, this.y + 226, 0xFFFFFFFF);
+        this.drawString(this.fontRendererObj, TextFormatting.DARK_GRAY + debugInfo, this.x + 2, this.y + 226, 0xFFFFFFFF);
 
         super.drawScreen(mouseX, mouseY, partialTicks);
         this.buttonList.stream().filter(r -> r instanceof FlatColorButton)

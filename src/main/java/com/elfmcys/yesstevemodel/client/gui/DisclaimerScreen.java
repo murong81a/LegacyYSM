@@ -20,14 +20,14 @@ public class DisclaimerScreen extends Screen {
     @Override
     public void initGui() {
         String mainText = I18n.format("gui.yes_steve_model.disclaimer.text");
-        List<String> splitMainText = RenderUtil.listLineBreakStringToWidth(this.fontRenderer, mainText, 400);
-        int totalHeight = splitMainText.size() * this.fontRenderer.FONT_HEIGHT + 20 + 20 + 10 + 20;
+        List<String> splitMainText = RenderUtil.listLineBreakStringToWidth(this.fontRendererObj, mainText, 400);
+        int totalHeight = splitMainText.size() * this.fontRendererObj.FONT_HEIGHT + 20 + 20 + 10 + 20;
         this.x = (this.width - 400) / 2;
         this.y = (this.height - totalHeight) / 2;
 
         String readCheckboxText = I18n.format("gui.yes_steve_model.disclaimer.read");
-        int readTextWidth = this.fontRenderer.getStringWidth(readCheckboxText);
-        this.readCheckbox = new Checkbox((this.width - readTextWidth) / 2, this.y + totalHeight - 50, readCheckboxText, this.fontRenderer, !GeneralConfig.DISCLAIMER_SHOW);
+        int readTextWidth = this.fontRendererObj.getStringWidth(readCheckboxText);
+        this.readCheckbox = new Checkbox((this.width - readTextWidth) / 2, this.y + totalHeight - 50, readCheckboxText, this.fontRendererObj, !GeneralConfig.DISCLAIMER_SHOW);
         this.addButton(this.readCheckbox);
         this.addButton(new Button((this.width - 300) / 2, this.y + totalHeight - 20, 300, 20, I18n.format("gui.yes_steve_model.disclaimer.close"), b -> {
             if (this.readCheckbox.selected()) {
@@ -43,7 +43,7 @@ public class DisclaimerScreen extends Screen {
     @Override
     public void drawScreen(int pMouseX, int pMouseY, float pPartialTick) {
         this.drawDefaultBackground();
-        RenderUtil.drawWordWrap(this.fontRenderer, I18n.format("gui.yes_steve_model.disclaimer.text"), this.x, this.y, 400, 0xffffffff);
+        RenderUtil.drawWordWrap(this.fontRendererObj, I18n.format("gui.yes_steve_model.disclaimer.text"), this.x, this.y, 400, 0xffffffff);
         super.drawScreen(pMouseX, pMouseY, pPartialTick);
     }
 }

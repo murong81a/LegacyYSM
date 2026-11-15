@@ -159,10 +159,10 @@ public class PlayerTextureScreen extends Screen {
         });
 
         String texturePageInfo = String.format("%d/%d", this.texturePage + 1, this.maxTexturePage + 1);
-        this.drawString(this.fontRenderer, texturePageInfo, this.x + 302 + (118 - this.fontRenderer.getStringWidth(texturePageInfo)) / 2, this.y + 223 - this.fontRenderer.FONT_HEIGHT / 2, 0xF3EFE0);
+        this.drawString(this.fontRendererObj, texturePageInfo, this.x + 302 + (118 - this.fontRendererObj.getStringWidth(texturePageInfo)) / 2, this.y + 223 - this.fontRendererObj.FONT_HEIGHT / 2, 0xF3EFE0);
 
         String animationPageInfo = String.format("%d/%d", this.animationPage + 1, this.maxAnimationPage + 1);
-        this.drawString(this.fontRenderer, animationPageInfo, this.x + 5 + (80 - this.fontRenderer.getStringWidth(animationPageInfo)) / 2, this.y + 218, 0xF3EFE0);
+        this.drawString(this.fontRendererObj, animationPageInfo, this.x + 5 + (80 - this.fontRendererObj.getStringWidth(animationPageInfo)) / 2, this.y + 218, 0xF3EFE0);
 
         super.drawScreen(mouseX, mouseY, partialTick);
         this.buttonList.stream().filter(r -> r instanceof FlatColorButton)

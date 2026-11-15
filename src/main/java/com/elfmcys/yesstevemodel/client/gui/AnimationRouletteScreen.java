@@ -92,11 +92,11 @@ public class AnimationRouletteScreen extends Screen {
             }
             keyText += " ]";
             if (this.names != null && this.names.length > i && StringUtils.isNoneBlank(this.names[i])) {
-                this.drawCenteredString(this.fontRenderer, this.names[i], (int) (this.x + r * MathHelper.cos(startDeg)), (int) (this.y + r * MathHelper.sin(startDeg) - (float) this.fontRenderer.FONT_HEIGHT / 2 - 8), 0xF3EFE0);
+                this.drawCenteredString(this.fontRendererObj, this.names[i], (int) (this.x + r * MathHelper.cos(startDeg)), (int) (this.y + r * MathHelper.sin(startDeg) - (float) this.fontRendererObj.FONT_HEIGHT / 2 - 8), 0xF3EFE0);
             } else {
-                this.drawCenteredString(this.fontRenderer, String.valueOf(i), (int) (this.x + r * MathHelper.cos(startDeg)), (int) (this.y + r * MathHelper.sin(startDeg) - (float) this.fontRenderer.FONT_HEIGHT / 2 - 8), 0xF3EFE0);
+                this.drawCenteredString(this.fontRendererObj, String.valueOf(i), (int) (this.x + r * MathHelper.cos(startDeg)), (int) (this.y + r * MathHelper.sin(startDeg) - (float) this.fontRendererObj.FONT_HEIGHT / 2 - 8), 0xF3EFE0);
             }
-            this.drawCenteredString(this.fontRenderer, keyText, (int) (this.x + r * MathHelper.cos(startDeg)), (int) (this.y + r * MathHelper.sin(startDeg) - (float) this.fontRenderer.FONT_HEIGHT / 2 + 4), 0xF3EFE0);
+            this.drawCenteredString(this.fontRendererObj, keyText, (int) (this.x + r * MathHelper.cos(startDeg)), (int) (this.y + r * MathHelper.sin(startDeg) - (float) this.fontRendererObj.FONT_HEIGHT / 2 + 4), 0xF3EFE0);
             startDeg = startDeg + 2 * (float) Math.PI / count;
         }
     }

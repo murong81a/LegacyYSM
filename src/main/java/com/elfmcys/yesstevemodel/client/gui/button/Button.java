@@ -24,9 +24,13 @@ public class Button extends GuiButton {
     }
 
     @Override
+    public void drawButton(@Nonnull Minecraft mc, int mouseX, int mouseY) {
+        this.drawButton(mc, mouseX, mouseY, 0.0F);
+    }
+
     public void drawButton(@Nonnull Minecraft mc, int mouseX, int mouseY, float pPartialTick) {
         if (!this.visible) return;
-        this.hovered = mouseX >= this.x && mouseY >= this.y && mouseX < this.x + this.width && mouseY < this.y + this.height;
+        this.hovered = mouseX >= this.xPosition && mouseY >= this.yPosition && mouseX < this.xPosition + this.width && mouseY < this.yPosition + this.height;
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         GlStateManager.enableBlend();
         GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
@@ -40,9 +44,9 @@ public class Button extends GuiButton {
     protected void renderWidget(@Nonnull Minecraft mc, int mouseX, int mouseY, float pPartialTick) {
         int i = this.getHoverState(this.isMouseOver());
         mc.getTextureManager().bindTexture(BUTTON_TEXTURES);
-        this.drawTexturedModalRect(this.x, this.y, 0, 46 + i * 20, this.width / 2, this.height);
-        this.drawTexturedModalRect(this.x + this.width / 2, this.y, 200 - this.width / 2, 46 + i * 20, this.width / 2, this.height);
-        this.renderString(mc.fontRenderer, this.getFGColor());
+        this.drawTexturedModalRect(this.xPosition, this.yPosition, 0, 46 + i * 20, this.width / 2, this.height);
+        this.drawTexturedModalRect(this.xPosition + this.width / 2, this.yPosition, 200 - this.width / 2, 46 + i * 20, this.width / 2, this.height);
+        this.renderString(mc.fontRendererObj, this.getFGColor());
     }
 
     protected void renderString(FontRenderer font, int color) {
@@ -51,9 +55,9 @@ public class Button extends GuiButton {
 
     @SuppressWarnings("SameParameterValue")
     protected void renderScrollingString(FontRenderer font, int width, int color) {
-        int i = this.x + width;
-        int j = this.x + this.width - width;
-        this.renderScrollingString(font, this.displayString, i, this.y, j, this.y + this.height, color);
+        int i = this.xPosition + width;
+        int j = this.xPosition + this.width - width;
+        this.renderScrollingString(font, this.displayString, i, this.yPosition, j, this.yPosition + this.height, color);
     }
 
     protected void renderScrollingString(FontRenderer font, String text, int minX, int minY, int maxX, int maxY, int color) {

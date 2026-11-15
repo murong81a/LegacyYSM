@@ -24,7 +24,7 @@ public class DownloadScreen extends Screen {
     @Override
     public void drawScreen(int pMouseX, int pMouseY, float pPartialTick) {
         this.drawDefaultBackground();
-        this.drawCenteredString(this.fontRenderer, TextFormatting.DARK_RED + "Coming Soooooooooooooooooooooooooon™", this.width / 2, this.height / 2 - 5, 0xFFFFFFFF);
+        this.drawCenteredString(this.fontRendererObj, TextFormatting.DARK_RED + "Coming Soooooooooooooooooooooooooon™", this.width / 2, this.height / 2 - 5, 0xFFFFFFFF);
         super.drawScreen(pMouseX, pMouseY, pPartialTick);
     }
 }

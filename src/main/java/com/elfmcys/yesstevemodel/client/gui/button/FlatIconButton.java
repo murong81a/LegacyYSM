@@ -30,6 +30,6 @@ public class FlatIconButton extends FlatColorButton {
         GlStateManager.enableDepth();
         int startX = (this.width - 16) / 2;
         int startY = (this.height - 16) / 2;
-        this.drawTexturedModalRect(this.x + startX, this.y + startY, this.textureX, this.textureY, 16, 16);
+        this.drawTexturedModalRect(this.xPosition + startX, this.yPosition + startY, this.textureX, this.textureY, 16, 16);
     }
 }

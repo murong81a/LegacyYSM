@@ -100,6 +100,15 @@ public class Screen extends GuiScreen {
     }
 
     /**
+     * 1.10.2 里 {@link GuiScreen#drawHoveringText(java.util.List, int, int)} 是 protected，
+     * 而按钮类需要从外部调用，这里放宽为 public。
+     */
+    @Override
+    public void drawHoveringText(@Nonnull java.util.List<String> textLines, int x, int y) {
+        super.drawHoveringText(textLines, x, y);
+    }
+
+    /**
      * {@link KeyBinding#isActiveAndMatches(int)}，但是不检测 {@link KeyConflictContext#isActive()}。
      */
     public static boolean isKeyActiveIgnoreConflict(KeyBinding keyBinding, int keyCode) {

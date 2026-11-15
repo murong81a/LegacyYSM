@@ -25,17 +25,17 @@ public class Checkbox extends Button {
 
     @Override
     protected void renderWidget(@Nonnull Minecraft mc, int mouseX, int mouseY, float pPartialTick) {
-        int j = this.x + BOX_SIZE + 4;
-        int k = this.y + (this.height >> 1) - 4;
+        int j = this.xPosition + BOX_SIZE + 4;
+        int k = this.yPosition + (this.height >> 1) - 4;
         mc.getTextureManager().bindTexture(CHECKBOX);
         drawScaledCustomSizeModalRect(
-                this.x, this.y,
+                this.xPosition, this.yPosition,
                 this.isMouseOver() ? 20 : 0, this.selected() ? 20 : 0,
                 20, 20,
                 BOX_SIZE, BOX_SIZE,
                 40, 40
         );
-        this.drawString(mc.fontRenderer, this.displayString, j, k, 14737632);
+        this.drawString(mc.fontRendererObj, this.displayString, j, k, 14737632);
     }
 
     @Override

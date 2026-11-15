@@ -2,6 +2,7 @@ package com.elfmcys.yesstevemodel.client.gui.button;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
+import com.elfmcys.yesstevemodel.client.gui.Screen;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.resources.I18n;
 
@@ -29,7 +30,7 @@ public class FlatColorButton extends Button {
         return this;
     }
 
-    public void renderToolTip(GuiScreen screen, int pMouseX, int pMouseY) {
+    public void renderToolTip(Screen screen, int pMouseX, int pMouseY) {
         if (this.hovered && this.tooltips != null) {
             screen.drawHoveringText(this.tooltips, pMouseX, pMouseY);
         }
@@ -37,17 +38,17 @@ public class FlatColorButton extends Button {
 
     @Override
     protected void renderWidget(@Nonnull Minecraft mc, int mouseX, int mouseY, float pPartialTick) {
-        FontRenderer font = mc.fontRenderer;
+        FontRenderer font = mc.fontRendererObj;
         if (this.isSelect) {
-            this.drawGradientRect(this.x, this.y, this.x + this.width, this.y + this.height, 0xff_1E90FF, 0xff_1E90FF);
+            this.drawGradientRect(this.xPosition, this.yPosition, this.xPosition + this.width, this.yPosition + this.height, 0xff_1E90FF, 0xff_1E90FF);
         } else {
-            this.drawGradientRect(this.x, this.y, this.x + this.width, this.y + this.height, 0xff_434242, 0xff_434242);
+            this.drawGradientRect(this.xPosition, this.yPosition, this.xPosition + this.width, this.yPosition + this.height, 0xff_434242, 0xff_434242);
         }
         if (this.isMouseOver()) {
-            this.drawGradientRect(this.x, this.y + 1, this.x + 1, this.y + this.height - 1, 0xff_F3EFE0, 0xff_F3EFE0);
-            this.drawGradientRect(this.x, this.y, this.x + this.width, this.y + 1, 0xff_F3EFE0, 0xff_F3EFE0);
-            this.drawGradientRect(this.x + this.width - 1, this.y + 1, this.x + this.width, this.y + this.height - 1, 0xff_F3EFE0, 0xff_F3EFE0);
-            this.drawGradientRect(this.x, this.y + this.height - 1, this.x + this.width, this.y + this.height, 0xff_F3EFE0, 0xff_F3EFE0);
+            this.drawGradientRect(this.xPosition, this.yPosition + 1, this.xPosition + 1, this.yPosition + this.height - 1, 0xff_F3EFE0, 0xff_F3EFE0);
+            this.drawGradientRect(this.xPosition, this.yPosition, this.xPosition + this.width, this.yPosition + 1, 0xff_F3EFE0, 0xff_F3EFE0);
+            this.drawGradientRect(this.xPosition + this.width - 1, this.yPosition + 1, this.xPosition + this.width, this.yPosition + this.height - 1, 0xff_F3EFE0, 0xff_F3EFE0);
+            this.drawGradientRect(this.xPosition, this.yPosition + this.height - 1, this.xPosition + this.width, this.yPosition + this.height, 0xff_F3EFE0, 0xff_F3EFE0);
         }
         this.renderString(font, 0xF3EFE0);
     }

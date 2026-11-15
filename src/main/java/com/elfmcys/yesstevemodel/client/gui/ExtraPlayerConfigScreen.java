@@ -54,10 +54,10 @@ public class ExtraPlayerConfigScreen extends Screen {
 
         int y = 15;
         String component = I18n.format("gui.yes_steve_model.extra_player_render.tips");
-        List<String> split = RenderUtil.listLineBreakStringToWidth(this.fontRenderer, component, 500);
+        List<String> split = RenderUtil.listLineBreakStringToWidth(this.fontRendererObj, component, 500);
         for (String charSequence : split) {
-            int w = this.fontRenderer.getStringWidth(charSequence);
-            this.drawString(this.fontRenderer, charSequence, this.width - 15 - w, y, 0xFFFFFF);
+            int w = this.fontRendererObj.getStringWidth(charSequence);
+            this.drawString(this.fontRendererObj, charSequence, this.width - 15 - w, y, 0xFFFFFF);
             y += 10;
         }
 

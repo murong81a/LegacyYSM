@@ -14,6 +14,7 @@ import com.elfmcys.yesstevemodel.util.ModelIdUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.FontRenderer;
+import com.elfmcys.yesstevemodel.client.gui.Screen;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.player.EntityPlayer;
@@ -85,22 +86,22 @@ public class ModelButton extends Button {
 
     @Override
     protected void renderWidget(@Nonnull Minecraft mc, int mouseX, int mouseY, float partialTick) {
-        final FontRenderer font = mc.fontRenderer;
+        final FontRenderer font = mc.fontRendererObj;
         GlStateManager.disableDepth();
         // 灰背景
-        this.drawGradientRect(this.x, this.y, this.x + this.width, this.y + this.height, this.color, this.color);
+        this.drawGradientRect(this.xPosition, this.yPosition, this.xPosition + this.width, this.yPosition + this.height, this.color, this.color);
         // 背景图
         if (this.backgroundTexture != null) {
             GlStateManager.enableBlend();
             GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
             mc.getTextureManager().bindTexture(this.backgroundTexture);
-            drawModalRectWithCustomSizedTexture(this.x, this.y, 0.0F, 0.0F, this.width, this.height, 52, 90);
+            drawModalRectWithCustomSizedTexture(this.xPosition, this.yPosition, 0.0F, 0.0F, this.width, this.height, 52, 90);
             GlStateManager.disableBlend();
         }
         // 玩家模型
         GlStateManager.enableDepth();
-        RenderUtil.scissor(this.x, this.y, this.width, this.height - 20);
-        RenderUtil.renderEntityInInventory(this.x + this.width / 2, this.y + this.height / 2 + 20, 30, mc.player, this.modelInfo.getLeft(), this.modelInfo.getRight().get(0), custom -> {
+        RenderUtil.scissor(this.xPosition, this.yPosition, this.width, this.height - 20);
+        RenderUtil.renderEntityInInventory(this.xPosition + this.width / 2, this.yPosition + this.height / 2 + 20, 30, mc.player, this.modelInfo.getLeft(), this.modelInfo.getRight().get(0), custom -> {
             if (!this.previewAnimation.isEmpty() && !custom.hasPreviewAnimation(this.previewAnimation)) {
                 custom.setPreviewAnimation(this.previewAnimation);
             }
@@ -112,28 +113,28 @@ public class ModelButton extends Button {
             GlStateManager.enableBlend();
             GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
             mc.getTextureManager().bindTexture(this.foregroundTexture);
-            drawModalRectWithCustomSizedTexture(this.x, this.y, 0.0F, 0.0F, this.width, this.height, 52, 90);
+            drawModalRectWithCustomSizedTexture(this.xPosition, this.yPosition, 0.0F, 0.0F, this.width, this.height, 52, 90);
             GlStateManager.disableBlend();
         }
         // 文字
         final String modelName = GeneralConfig.SHOW_MODEL_ID_FIRST || this.modelName.isEmpty() ? this.displayString : this.modelName;
         List<String> split = font.listFormattedStringToWidth(modelName, 45);
         if (split.size() > 1) {
-            this.drawCenteredString(font, split.get(0), this.x + this.width / 2, this.y + this.height - 19, 0xF3EFE0);
-            this.drawCenteredString(font, split.get(1), this.x + this.width / 2, this.y + this.height - 10, 0xF3EFE0);
+            this.drawCenteredString(font, split.get(0), this.xPosition + this.width / 2, this.yPosition + this.height - 19, 0xF3EFE0);
+            this.drawCenteredString(font, split.get(1), this.xPosition + this.width / 2, this.yPosition + this.height - 10, 0xF3EFE0);
         } else {
-            this.drawCenteredString(font, modelName, this.x + this.width / 2, this.y + this.height - 15, 0xF3EFE0);
+            this.drawCenteredString(font, modelName, this.xPosition + this.width / 2, this.yPosition + this.height - 15, 0xF3EFE0);
         }
         // 悬停边框
         if (!this.needAuth && this.isMouseOver()) {
-            this.drawGradientRect(this.x, this.y + 1, this.x + 1, this.y + this.height - 1, 0xff_F3EFE0, 0xff_F3EFE0);
-            this.drawGradientRect(this.x, this.y, this.x + this.width, this.y + 1, 0xff_F3EFE0, 0xff_F3EFE0);
-            this.drawGradientRect(this.x + this.width - 1, this.y + 1, this.x + this.width, this.y + this.height - 1, 0xff_F3EFE0, 0xff_F3EFE0);
-            this.drawGradientRect(this.x, this.y + this.height - 1, this.x + this.width, this.y + this.height, 0xff_F3EFE0, 0xff_F3EFE0);
+            this.drawGradientRect(this.xPosition, this.yPosition + 1, this.xPosition + 1, this.yPosition + this.height - 1, 0xff_F3EFE0, 0xff_F3EFE0);
+            this.drawGradientRect(this.xPosition, this.yPosition, this.xPosition + this.width, this.yPosition + 1, 0xff_F3EFE0, 0xff_F3EFE0);
+            this.drawGradientRect(this.xPosition + this.width - 1, this.yPosition + 1, this.xPosition + this.width, this.yPosition + this.height - 1, 0xff_F3EFE0, 0xff_F3EFE0);
+            this.drawGradientRect(this.xPosition, this.yPosition + this.height - 1, this.xPosition + this.width, this.yPosition + this.height, 0xff_F3EFE0, 0xff_F3EFE0);
         }
         // 锁定遮罩
         if (this.needAuth) {
-            this.drawGradientRect(this.x, this.y, this.x + this.width, this.y + this.height, 0x9f_222222, 0x9f_222222);
+            this.drawGradientRect(this.xPosition, this.yPosition, this.xPosition + this.width, this.yPosition + this.height, 0x9f_222222, 0x9f_222222);
         }
         // 收藏图标
         CapabilityEvent.getStarModelsCap(mc.player).ifPresent(cap -> {
@@ -143,13 +144,13 @@ public class ModelButton extends Button {
                 GlStateManager.enableBlend();
                 GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
                 GlStateManager.enableDepth();
-                this.drawTexturedModalRect(this.x + this.width - 14, this.y, 16, 0, 16, 16);
+                this.drawTexturedModalRect(this.xPosition + this.width - 14, this.yPosition, 16, 0, 16, 16);
             }
         });
         GlStateManager.enableDepth();
     }
 
-    public void renderComponentTooltip(GuiScreen screen, int pMouseX, int pMouseY) {
+    public void renderComponentTooltip(Screen screen, int pMouseX, int pMouseY) {
         if (this.isMouseOver() && this.tooltips != null) {
             screen.drawHoveringText(this.tooltips, pMouseX, pMouseY);
         }

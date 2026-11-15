@@ -20,9 +20,24 @@ public final class ResourceUtil {
      * @return the parsed resource location; otherwise {@code null} if there is a non {@code [a-z0-9_.-]} character in
      * the decomposed namespace or a non {@code [a-z0-9/._-]} character in the decomposed path
      */
+    /**
+     * 1.10.2 的 {@code ResourceLocation.splitObjectName} 是 protected，这里复刻其行为。
+     */
+    private static String[] splitObjectName(String pLocation) {
+        String[] astring = new String[]{"minecraft", pLocation};
+        int i = pLocation.indexOf(':');
+        if (i >= 0) {
+            astring[1] = pLocation.substring(i + 1);
+            if (i > 1) {
+                astring[0] = pLocation.substring(0, i);
+            }
+        }
+        return astring;
+    }
+
     @Nullable
     public static ResourceLocation tryParse(String pLocation) {
-        String[] astring = ResourceLocation.splitObjectName(pLocation);
+        String[] astring = splitObjectName(pLocation);
         if (!isValidNamespace(astring[0]) || !isValidPath(astring[1])) return null;
         return new ResourceLocation(astring[0], astring[1]);
     }
@@ -38,7 +53,7 @@ public final class ResourceUtil {
      * @see #isValidNamespace(String)
      */
     public static boolean isValidResourceLocation(String pLocation) {
-        String[] astring = ResourceLocation.splitObjectName(pLocation);
+        String[] astring = splitObjectName(pLocation);
         return isValidNamespace(StringUtils.isEmpty(astring[0]) ? "minecraft" : astring[0]) && isValidPath(astring[1]);
     }
 

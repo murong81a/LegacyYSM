@@ -36,7 +36,7 @@ public class OpenModelFolderScreen extends Screen {
     @Override
     public void drawScreen(int pMouseX, int pMouseY, float pPartialTick) {
         this.drawDefaultBackground();
-        RenderUtil.drawWordWrap(this.fontRenderer, I18n.format("gui.yes_steve_model.open_model_folder.tips"),
+        RenderUtil.drawWordWrap(this.fontRendererObj, I18n.format("gui.yes_steve_model.open_model_folder.tips"),
                 (this.width - 400) / 2, this.height / 2 - 80, 400, 0XFFFFFF);
         super.drawScreen(pMouseX, pMouseY, pPartialTick);
     }
