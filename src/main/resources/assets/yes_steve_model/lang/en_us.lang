@@ -445,3 +445,4 @@ config.yes_steve_model.server.default_model_id=Default Model Id
 config.yes_steve_model.server.default_model_id.tooltip=The default model ID when a player first enters the game
 config.yes_steve_model.server.default_model_texture=Default Model Texture
 config.yes_steve_model.server.default_model_texture.tooltip=The default model texture when a player first enters the game
+message.yes_steve_model.model.animation_roulette.page=§6§l[§aYSM§6§l] §rPage %d/%d (scroll or arrow keys)

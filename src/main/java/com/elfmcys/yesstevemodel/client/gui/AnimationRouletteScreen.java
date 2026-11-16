@@ -29,9 +29,13 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 
 public class AnimationRouletteScreen extends Screen {
+    /// 一圈显示的槽位数；实际可用槽位由模型的 extra_animation_names 长度决定，超出部分靠翻页
+    private static final int SLOT_COUNT = 8;
     private int x;
     private int y;
     private int selectId = -1;
+    /// 当前页，每页 SLOT_COUNT 个槽位
+    private int page = 0;
     private @Nullable String[] names;
 
     public AnimationRouletteScreen() {
@@ -71,15 +75,51 @@ public class AnimationRouletteScreen extends Screen {
 
     @Override
     public void mouseClicked(int pMouseX, int pMouseY, int pButton) throws IOException {
-        if (-1 < this.selectId && this.selectId < 8 && this.mc != null) {
+        int slot = this.page * SLOT_COUNT + this.selectId;
+        int total = this.names == null ? 0 : this.names.length;
+        if (this.selectId >= 0 && slot >= 0 && slot < total && this.mc != null) {
             this.mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
-            NetworkHandler.CHANNEL.sendToServer(new SetPlayAnimation(this.selectId));
+            NetworkHandler.CHANNEL.sendToServer(new SetPlayAnimation(slot));
             if (this.mc.player != null && GeneralConfig.PRINT_ANIMATION_ROULETTE_MSG) {
-                this.mc.player.sendMessage(new TextComponentTranslation("message.yes_steve_model.model.animation_roulette.play", this.selectId));
+                this.mc.player.sendMessage(new TextComponentTranslation("message.yes_steve_model.model.animation_roulette.play", slot));
             }
             this.mc.displayGuiScreen(null);
         }
         super.mouseClicked(pMouseX, pMouseY, pButton);
+    }
+
+    /**
+     * 滚轮翻页：额外动画多于 8 个时（最多见过 36 个），原来的轮盘只能按到前 8 个。
+     */
+    @Override
+    public void handleMouseInput() throws IOException {
+        super.handleMouseInput();
+        int dWheel = org.lwjgl.input.Mouse.getEventDWheel();
+        if (dWheel != 0) {
+            int maxPage = this.maxPage();
+            this.page += dWheel > 0 ? -1 : 1;
+            if (this.page < 0) this.page = maxPage;
+            if (this.page > maxPage) this.page = 0;
+        }
+    }
+
+    @Override
+    public void handleKeyboardInput() throws IOException {
+        super.handleKeyboardInput();
+        if (Keyboard.getEventKeyState()) {
+            int key = Keyboard.getEventKey();
+            int maxPage = this.maxPage();
+            if (key == Keyboard.KEY_LEFT || key == Keyboard.KEY_PRIOR) {
+                this.page = this.page > 0 ? this.page - 1 : maxPage;
+            } else if (key == Keyboard.KEY_RIGHT || key == Keyboard.KEY_NEXT) {
+                this.page = this.page < maxPage ? this.page + 1 : 0;
+            }
+        }
+    }
+
+    private int maxPage() {
+        int total = this.names == null ? 0 : this.names.length;
+        return total <= SLOT_COUNT ? 0 : (total - 1) / SLOT_COUNT;
     }
 
     @Override
@@ -93,10 +133,14 @@ public class AnimationRouletteScreen extends Screen {
     }
 
     private void drawRouletteText() {
-        int count = 8;
+        int count = SLOT_COUNT;
+        int total = this.names == null ? 0 : this.names.length;
+        int maxPage = this.maxPage();
+        if (this.page > maxPage) this.page = maxPage;
         float startDeg = (float) Math.PI / count;
         for (int i = 0; i < count; i++) {
             int r = 65;
+            int slot = this.page * count + i;
             String keyText = TextFormatting.YELLOW + "[ ";
             KeyBinding keyMapping = ExtraAnimationKey.EXTRA_ANIMATION_KEYS.get(i);
             if (keyMapping.getKeyCode() == Keyboard.KEY_NONE) {
@@ -105,13 +149,18 @@ public class AnimationRouletteScreen extends Screen {
                 keyText += keyMapping.getDisplayName();
             }
             keyText += " ]";
-            if (this.names != null && this.names.length > i && StringUtils.isNoneBlank(this.names[i])) {
-                this.drawCenteredString(this.fontRendererObj, this.names[i], (int) (this.x + r * MathHelper.cos(startDeg)), (int) (this.y + r * MathHelper.sin(startDeg) - (float) this.fontRendererObj.FONT_HEIGHT / 2 - 8), 0xF3EFE0);
+            String label = slot < total ? this.names[slot] : null;
+            if (StringUtils.isNoneBlank(label)) {
+                this.drawCenteredString(this.fontRendererObj, label, (int) (this.x + r * MathHelper.cos(startDeg)), (int) (this.y + r * MathHelper.sin(startDeg) - (float) this.fontRendererObj.FONT_HEIGHT / 2 - 8), 0xF3EFE0);
             } else {
-                this.drawCenteredString(this.fontRendererObj, String.valueOf(i), (int) (this.x + r * MathHelper.cos(startDeg)), (int) (this.y + r * MathHelper.sin(startDeg) - (float) this.fontRendererObj.FONT_HEIGHT / 2 - 8), 0xF3EFE0);
+                this.drawCenteredString(this.fontRendererObj, String.valueOf(slot), (int) (this.x + r * MathHelper.cos(startDeg)), (int) (this.y + r * MathHelper.sin(startDeg) - (float) this.fontRendererObj.FONT_HEIGHT / 2 - 8), 0xF3EFE0);
             }
             this.drawCenteredString(this.fontRendererObj, keyText, (int) (this.x + r * MathHelper.cos(startDeg)), (int) (this.y + r * MathHelper.sin(startDeg) - (float) this.fontRendererObj.FONT_HEIGHT / 2 + 4), 0xF3EFE0);
             startDeg = startDeg + 2 * (float) Math.PI / count;
+        }
+        if (maxPage > 0) {
+            String hint = I18n.format("message.yes_steve_model.model.animation_roulette.page", this.page + 1, maxPage + 1);
+            this.drawCenteredString(this.fontRendererObj, hint, this.x, this.y - 118, 0xF3EFE0);
         }
     }
 
@@ -124,7 +173,7 @@ public class AnimationRouletteScreen extends Screen {
         VertexBuffer bufferbuilder = tesselator.getBuffer();
         bufferbuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
 
-        int count = 8;
+        int count = SLOT_COUNT;
         float theta = (float) MathHelper.atan2(mouseY - this.y, mouseX - this.x);
         if (theta < 0) {
             theta = (float) Math.PI * 2 + theta;

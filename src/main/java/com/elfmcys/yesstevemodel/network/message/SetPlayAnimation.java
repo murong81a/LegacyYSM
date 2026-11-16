@@ -12,6 +12,8 @@ import javax.annotation.Nullable;
 
 public class SetPlayAnimation implements IPacketBufferMessage {
     private static final int STOP = -1;
+    /// 额外动画槽位上限：模型最多见过 46 个 extraN，留出余量；超出直接忽略。
+    private static final int MAX_EXTRA_ANIMATION_ID = 64;
     private int extraAnimationId;
 
     public SetPlayAnimation() {
@@ -45,7 +47,7 @@ public class SetPlayAnimation implements IPacketBufferMessage {
                     if (sender == null) {
                         return;
                     }
-                    if (STOP <= message.extraAnimationId && message.extraAnimationId < 8) {
+                    if (STOP <= message.extraAnimationId && message.extraAnimationId < MAX_EXTRA_ANIMATION_ID) {
                         handleCapability(message, sender);
                     }
                 });
