@@ -1,4 +1,8 @@
 build/
 .gradle/
 run/
-
+*.ysm
+*.mca
+*.bin
+run/config/
+investigations/

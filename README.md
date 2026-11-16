@@ -47,3 +47,14 @@ gradle build --no-daemon -I init-mirror.gradle
 - 人形与狐狸在同一 `main.json` 中，狐狸是 `FOX` 骨骼子树；平时由常驻并行动画 `parallel1` 用 `FOX.scale = v.roaming.a`、`AllBody.scale = 1 - v.roaming.a` 来二选一显示。
 - `extra0`（变身）的时间轴翻转 `v.roaming.a`。
 - 如果并行动画没有运行（动画数据缺失、被暂停拦截等），`FOX` 会以默认缩放 1 和人形同时出现。
+
+## 许可证
+
+本仓库是 [RuiXuqi/LegacyYSM](https://github.com/RuiXuqi/LegacyYSM)（BSD 3-Clause）的**非官方 Forge 1.10.2 移植**，
+原始版权归 Yes Steve Model Dev Group；移植部分同样以 BSD 3-Clause 发布，见根目录 LICENSE。
+
+第三方说明：
+- ssets/yes_steve_model/builtin/ 下的内置模型来自上游，随本模组一起分发；
+- 玩家自备的 .ysm 模型版权归各自作者，**不进入本仓库**（.gitignore 已排除 *.ysm）；
+- 混入层使用 MixinBooter，运行时依赖由整合包提供。
+
