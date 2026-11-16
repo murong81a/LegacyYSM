@@ -21,11 +21,29 @@ set GRADLE_USER_HOME=<gradle home>
 gradle build --no-daemon -I init-mirror.gradle
 ```
 
+Jabel 从 Maven Central 解析（本地 `env/jabel` 不再需要）；JDK 17 的 `javac` 可用 `JAVAC17` 环境变量指定，未设置时回退到本机固定路径。
+
 产物：`build/libs/yesstevemodel-1.10.2-1.2.0-<mcver>.jar`
 
 注意：
 - 必须用 `build`（会 reobf），**不要**用 `jar`/`runClient` 产出的 dev 包；
 - 客户端运行期间不要重新构建同一个 jar，否则会 `ZipError: jzentry == 0`。
+
+## CI（GitHub Actions）
+
+`.github/workflows/build.yml`，触发条件：推 `1.10.2-forge`、对它的 PR、`workflow_dispatch`、`v*` 标签。
+
+| 步骤 | 作用 |
+|---|---|
+| JDK 17 → JDK 8 依次安装 | 17 给 javac 解析新语法，8 给 Gradle/ForgeGradle 跑（顺序不能反，最后安装的成为 `JAVA_HOME`） |
+| 安装 Gradle 4.10.3 | ForgeGradle 2.3 只支持 4.x |
+| `gradle setupCIWorkspace` | 预下载 MCP `stable_29` 与 Forge userdev，进缓存 |
+| `gradle build` | `compileJava.doLast` 已强制校验 refmap 非空且含关键映射 |
+| 校验 jar | refmap、`META-INF/yes_steve_model_at.cfg`、`mcmod.info`、manifest 里的 `FMLCorePlugin` |
+| 上传 artifact | `yesstevemodel-1.10.2`，保留 14 天 |
+
+打 `v*` 标签（如 `v1.2.0`）会自动创建 GitHub Release 并附上 jar。
+
 
 ## 1.10.2 相关要点（踩过的坑）
 
