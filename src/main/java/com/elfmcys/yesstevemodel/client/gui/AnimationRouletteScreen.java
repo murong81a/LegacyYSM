@@ -5,6 +5,7 @@ import com.elfmcys.yesstevemodel.client.config.GeneralConfig;
 import com.elfmcys.yesstevemodel.client.input.AnimationRouletteKey;
 import com.elfmcys.yesstevemodel.client.input.ExtraAnimationKey;
 import com.elfmcys.yesstevemodel.event.CapabilityEvent;
+import com.elfmcys.yesstevemodel.geckolib3.geo.raw.pojo.ExtraInfo;
 import com.elfmcys.yesstevemodel.network.NetworkHandler;
 import com.elfmcys.yesstevemodel.network.message.SetPlayAnimation;
 import com.elfmcys.yesstevemodel.util.ModelIdUtil;
@@ -40,11 +41,24 @@ public class AnimationRouletteScreen extends Screen {
     public void initGui() {
         this.x = this.width / 2;
         this.y = this.height / 2 - 8;
+        // 模型同步是异步的（登录/切换世界/重载资源包期间 EXTRA_INFO 可能为空），
+        // 因此这里必须先兜底为空数组，否则开轮盘界面会 NPE 崩游戏
+        this.names = new String[0];
 
         if (this.mc != null && this.mc.player != null) {
             CapabilityEvent.getModelInfoCap(this.mc.player).ifPresent(cap -> {
                 ResourceLocation modelId = cap.getModelId();
-                this.names = ClientModelManager.EXTRA_INFO.get(ModelIdUtil.getInfoId(modelId)).getExtraAnimationNames();
+                if (modelId == null) {
+                    return;
+                }
+                ExtraInfo extraInfo = ClientModelManager.EXTRA_INFO.get(ModelIdUtil.getInfoId(modelId));
+                if (extraInfo == null) {
+                    return;
+                }
+                String[] extraNames = extraInfo.getExtraAnimationNames();
+                if (extraNames != null) {
+                    this.names = extraNames;
+                }
             });
         }
     }
