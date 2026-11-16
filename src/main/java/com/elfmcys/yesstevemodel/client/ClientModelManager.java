@@ -243,9 +243,29 @@ public class ClientModelManager {
     }
 
     private static boolean isModelTexture(ResourceLocation infoId, String name) {
-        if (name.equals(FormatManager.ARROW_TEXTURE_FILE_NAME)) return false;
+        // 兼容 V3 解包出来的 "textures/arrow.png" / "avatar/xxx.png" 这类带目录的路径：
+        // 只按文件名判断，避免 arrow / specular / 头像被注册成可选皮肤。
+        String fileName = name.toLowerCase(java.util.Locale.ROOT);
+        int slash = fileName.lastIndexOf('/');
+        if (slash >= 0) {
+            String dir = fileName.substring(0, slash + 1).toLowerCase(java.util.Locale.ROOT);
+            if (dir.contains("avatar/")) return false;
+            fileName = fileName.substring(slash + 1);
+        }
+        if (fileName.equals(FormatManager.ARROW_TEXTURE_FILE_NAME)) return false;
+        if (fileName.endsWith("_specular.png")) return false;
+        if (fileName.equals("tacz_use.png")) return false;
         final ExtraInfo extraInfo = EXTRA_INFO.get(infoId);
-        return extraInfo == null || (!name.equals(extraInfo.getGuiBackground()) && !name.equals(extraInfo.getGuiForeground()));
+        if (extraInfo == null) return true;
+        return !fileName.equals(baseName(extraInfo.getGuiBackground()))
+                && !fileName.equals(baseName(extraInfo.getGuiForeground()));
+    }
+
+    private static String baseName(String path) {
+        if (path == null) return "";
+        String lower = path.toLowerCase(java.util.Locale.ROOT);
+        int slash = lower.lastIndexOf('/');
+        return slash >= 0 ? lower.substring(slash + 1) : lower;
     }
 
     /**

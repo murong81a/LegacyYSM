@@ -178,7 +178,14 @@ public final class ServerModelManager {
             Type type = Type.getType(file);
             if (type == Type.UNKNOWN) continue;
             String modelId = type.getFileName(file);
-            if (!ResourceUtil.isValidResourceLocation(modelId)) continue;
+            if (!ResourceUtil.isValidResourceLocation(modelId)) {
+                // 静默跳过是上一版最难排查的地方：中文名 / 空格 / 大写的模型文件
+                // 会连日志都没有地消失，看起来像"模型根本没被识别"。
+                YesSteveModel.LOGGER.warn(
+                        "YSM: 跳过模型 {}（id \"{}\" 含非法字符，只允许 a-z 0-9 _ . -，请重命名为 ASCII）",
+                        file.getName(), modelId);
+                continue;
+            }
             if (loadLegacyModel(rootPath, file, modelId, type)) {
                 success++;
                 if (rootPath.equals(BUILTIN)) {
