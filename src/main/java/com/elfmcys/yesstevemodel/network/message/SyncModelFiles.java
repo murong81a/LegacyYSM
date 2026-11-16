@@ -1,5 +1,6 @@
 package com.elfmcys.yesstevemodel.network.message;
 
+import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.elfmcys.yesstevemodel.data.EncryptTools;
 import com.elfmcys.yesstevemodel.model.format.ServerModelInfo;
 import com.elfmcys.yesstevemodel.network.NetworkHandler;
@@ -24,6 +25,11 @@ import java.util.stream.Collectors;
 import static com.elfmcys.yesstevemodel.model.ServerModelManager.*;
 
 public class SyncModelFiles implements IPacketBufferMessage {
+    /** 与 EncryptTools.MAX_MAP_ENTRIES 保持一致，避免客户端一次塞入过多条目 */
+    private static final int MAX_MD5_ENTRIES = 4096;
+    /** md5 固定为 32 位十六进制，64 已留足余量，同时避免超长字符串 */
+    private static final int MAX_MD5_LENGTH = 64;
+
     private String[] md5Info;
 
     public SyncModelFiles() {
@@ -44,9 +50,22 @@ public class SyncModelFiles implements IPacketBufferMessage {
     @Override
     public void fromBytes(PacketBuffer buf) {
         int count = buf.readVarInt();
+        // 先校验条目数，避免负数或超大数组直接分配/解析
+        if (count < 0 || count > MAX_MD5_ENTRIES) {
+            YesSteveModel.LOGGER.warn("YSM: SyncModelFiles 条目数非法（{}，上限 {}），已拒绝该包",
+                    count, MAX_MD5_ENTRIES);
+            // 直接抛出，让上层丢弃该包；不能当成空列表，否则服务端会把全部模型重新下发一遍
+            throw new IllegalArgumentException("invalid SyncModelFiles entry count: " + count);
+        }
         String[] output = new String[count];
-        for (int i = 0; i < count; i++) {
-            output[i] = buf.readString(Short.MAX_VALUE);
+        try {
+            for (int i = 0; i < count; i++) {
+                output[i] = buf.readString(MAX_MD5_LENGTH);
+            }
+        } catch (RuntimeException e) {
+            // 超长字符串/缓冲区不足都属于非法包，记录后继续抛出，让上层丢弃该包
+            YesSteveModel.LOGGER.warn("YSM: SyncModelFiles 解析失败（条目数 {}），已拒绝该包", count, e);
+            throw e;
         }
         this.md5Info = output;
     }
@@ -83,7 +102,8 @@ public class SyncModelFiles implements IPacketBufferMessage {
                     byte[] modelBytes = FileUtils.readFileToByteArray(modelFile);
                     ThreadTools.THREAD_POOL.submit(() -> NetworkHandler.sendToClientPlayer(new SendModelFile(modelBytes), sender));
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    YesSteveModel.LOGGER.error("YSM: 读取服务端模型缓存文件 {} 失败（玩家 {} 将无法收到该模型）",
+                            md5, sender.getName(), e);
                 }
             }
         }
@@ -95,7 +115,8 @@ public class SyncModelFiles implements IPacketBufferMessage {
                 byte[] output = EncryptTools.encryptPassword(uuid, password);
                 ThreadTools.THREAD_POOL.submit(() -> NetworkHandler.sendToClientPlayer(new SendModelFile(output), sender));
             } catch (Exception e) {
-                e.printStackTrace();
+                YesSteveModel.LOGGER.error("YSM: 读取/加密模型密码文件 {} 失败（玩家 {} 将无法解密模型）",
+                        PASSWORD_FILE, sender.getName(), e);
             }
         }
     }

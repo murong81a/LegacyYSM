@@ -38,7 +38,8 @@ public class ExtraAnimationKey {
     @SubscribeEvent
     public static void onKeyboardInput(InputEvent.KeyInputEvent event) {
         for (KeyBinding key : EXTRA_ANIMATION_KEYS) {
-            if (key.isPressed()) {
+            // 每个 key 单独判定：当前事件键码必须正好是这一项，KEY_NONE 未绑定时不会通过
+            if (KeyGuards.canTrigger(key)) {
                 NetworkHandler.CHANNEL.sendToServer(new SetPlayAnimation(EXTRA_ANIMATION_KEYS.indexOf(key)));
                 return;
             }

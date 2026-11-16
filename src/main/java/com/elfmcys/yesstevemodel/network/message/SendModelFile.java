@@ -1,5 +1,6 @@
 package com.elfmcys.yesstevemodel.network.message;
 
+import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.elfmcys.yesstevemodel.client.ClientModelManager;
 import com.elfmcys.yesstevemodel.model.ServerModelManager;
 import com.elfmcys.yesstevemodel.util.Md5Utils;
@@ -59,7 +60,8 @@ public class SendModelFile implements IPacketBufferMessage {
                         FileUtils.writeByteArrayToFile(file, message.data);
                         RequestLoadModel.loadModel(fileName);
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        YesSteveModel.LOGGER.error("YSM: 写入模型缓存文件 {} 失败（{} 字节）",
+                                fileName, message.data.length, e);
                     }
                 }
             });

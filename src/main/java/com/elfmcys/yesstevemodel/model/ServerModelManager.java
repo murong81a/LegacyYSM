@@ -77,6 +77,12 @@ public final class ServerModelManager {
      */
     public static final Set<String> AUTH_MODELS = Sets.newHashSet();
 
+    /** 本次 reloadPacks 的缓存统计：builtin / custom / auth 成功数，以及失败数 */
+    private static int cachedBuiltin;
+    private static int cachedCustom;
+    private static int cachedAuth;
+    private static int cachedFailed;
+
     public static void sendRequestSyncModelMessage(PlayerList playerList) {
         for (EntityPlayerMP player : playerList.getPlayers()) {
             NetworkHandler.sendToClientPlayer(new RequestSyncModel(), player);
@@ -94,6 +100,10 @@ public final class ServerModelManager {
     public static void reloadPacks() {
         CACHE_NAME_INFO.clear();
         AUTH_MODELS.clear();
+        cachedBuiltin = 0;
+        cachedCustom = 0;
+        cachedAuth = 0;
+        cachedFailed = 0;
 
         createFolder(FOLDER);
         createFolder(CUSTOM);
@@ -110,6 +120,9 @@ public final class ServerModelManager {
         cacheAllModels(BUILTIN);
         cacheAllModels(CUSTOM);
         cacheAllModels(AUTH);
+        // 三个目录都处理完后给出一条总计，方便快速判断本次 reload 是否整体失败
+        YesSteveModel.LOGGER.info("YSM: 模型缓存汇总：builtin {} 个，custom {} 个，auth {} 个，失败 {} 个",
+                cachedBuiltin, cachedCustom, cachedAuth, cachedFailed);
     }
 
     private static void initPassword() {
@@ -122,7 +135,7 @@ public final class ServerModelManager {
                 FileUtils.writeByteArrayToFile(passwordFile, EncryptTools.writePassword());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            YesSteveModel.LOGGER.error("YSM: 初始化模型密码失败（{}），客户端将无法解密模型", PASSWORD_FILE, e);
         }
     }
 
@@ -136,7 +149,7 @@ public final class ServerModelManager {
             try {
                 Files.createDirectories(path);
             } catch (Exception e) {
-                e.printStackTrace();
+                YesSteveModel.LOGGER.error("YSM: 创建模型目录 {} 失败", path, e);
             }
         }
     }
@@ -145,7 +158,7 @@ public final class ServerModelManager {
         try {
             FileUtils.deleteDirectory(path.toFile());
         } catch (Exception e) {
-            e.printStackTrace();
+            YesSteveModel.LOGGER.error("YSM: 删除模型目录 {} 失败", path, e);
         }
     }
 
@@ -155,27 +168,59 @@ public final class ServerModelManager {
 
     public static void cacheAllModels(Path rootPath) {
         File[] files = rootPath.toFile().listFiles();
-        if (files == null) return;
+        if (files == null) {
+            YesSteveModel.LOGGER.warn("YSM: 模型目录 {} 不存在或不可读，跳过缓存", rootPath);
+            return;
+        }
+        int success = 0;
+        int failed = 0;
         for (File file : files) {
             Type type = Type.getType(file);
             if (type == Type.UNKNOWN) continue;
             String modelId = type.getFileName(file);
             if (!ResourceUtil.isValidResourceLocation(modelId)) continue;
-            loadLegacyModel(rootPath, file, modelId, type);
+            if (loadLegacyModel(rootPath, file, modelId, type)) {
+                success++;
+                if (rootPath.equals(BUILTIN)) {
+                    cachedBuiltin++;
+                } else if (rootPath.equals(CUSTOM)) {
+                    cachedCustom++;
+                } else if (rootPath.equals(AUTH)) {
+                    cachedAuth++;
+                }
+            } else {
+                failed++;
+                cachedFailed++;
+            }
         }
+        YesSteveModel.LOGGER.info("YSM: 模型缓存汇总（{}）：成功 {} 个，失败 {} 个",
+                rootPath.getFileName(), success, failed);
     }
 
-    private static void loadLegacyModel(Path rootPath, File file, String modelId, Type type) {
+    /**
+     * @return 模型是否成功缓存
+     */
+    private static boolean loadLegacyModel(Path rootPath, File file, String modelId, Type type) {
         try (IModelAccess access = type.createAccess(file)) {
-            if (access == null) return;
+            if (access == null) {
+                YesSteveModel.LOGGER.warn("YSM: 无法读取 {} 模型 {}（访问器创建失败），已跳过",
+                        type.getName(), file.getName());
+                return false;
+            }
             boolean isAuth = rootPath.equals(AUTH);
             ModelData modelData = getModelData(access, modelId, isAuth, type);
-            if (modelData == null) return;
+            if (modelData == null) {
+                YesSteveModel.LOGGER.warn("YSM: 加载 {} 模型 {} 失败（缺少必要模型部件），已跳过",
+                        type.getName(), file.getName());
+                return false;
+            }
             ServerModelInfo info = cacheModel(modelData);
             CACHE_NAME_INFO.put(modelId, info);
             if (isAuth) AUTH_MODELS.add(modelId);
+            return true;
         } catch (Exception e) {
-            YesSteveModel.LOGGER.warn("Failed to load {} model: {}", type.getName(), file.getName(), e);
+            YesSteveModel.LOGGER.warn("YSM: 加载 {} 模型 {} 失败", type.getName(), file.getName(), e);
+            return false;
         }
     }
 

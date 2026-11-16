@@ -95,10 +95,15 @@ public class RequestLoadModel implements IPacketBufferMessage {
                 UUID uuid = Minecraft.getMinecraft().player.getUniqueID();
                 Path modelFile = ServerModelManager.CACHE_CLIENT.resolve(fileName);
                 byte[] fileBytes = FileUtils.readFileToByteArray(modelFile.toFile());
-                ModelData data = EncryptTools.decryptModel(UuidUtils.asBytes(uuid), ClientModelManager.PASSWORD, fileBytes);
-                if (data != null) {
-                    Minecraft.getMinecraft().addScheduledTask(() -> ClientModelManager.registerAll(data));
+                byte[] password = ClientModelManager.PASSWORD;
+                ModelData data = EncryptTools.decryptModel(UuidUtils.asBytes(uuid), password, fileBytes);
+                if (data == null) {
+                    // 解密失败是"模型缺失"的直接原因，必须留下明确日志，否则客户端只会表现为模型没加载
+                    YesSteveModel.LOGGER.warn("YSM: 模型 {} 解密失败（缓存 {} 字节，密码{}），本客户端将缺少该模型",
+                            fileName, fileBytes.length, password == null ? "未收到" : "已收到");
+                    return;
                 }
+                Minecraft.getMinecraft().addScheduledTask(() -> ClientModelManager.registerAll(data));
             } catch (Exception e) {
                 YesSteveModel.LOGGER.error("YSM: 加载模型 {} 失败", fileName, e);
             }

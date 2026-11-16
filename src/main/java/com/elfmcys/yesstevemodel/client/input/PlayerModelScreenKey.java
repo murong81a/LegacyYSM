@@ -26,7 +26,7 @@ public class PlayerModelScreenKey {
 
     @SubscribeEvent
     public static void onKeyboardInput(InputEvent.KeyInputEvent event) {
-        if (PLAYER_MODEL_KEY.isPressed()) {
+        if (KeyGuards.canTrigger(PLAYER_MODEL_KEY)) {
             if (GeneralConfig.DISCLAIMER_SHOW) {
                 Minecraft.getMinecraft().displayGuiScreen(new DisclaimerScreen());
             } else {

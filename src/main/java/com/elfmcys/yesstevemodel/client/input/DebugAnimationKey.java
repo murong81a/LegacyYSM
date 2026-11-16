@@ -49,7 +49,7 @@ public class DebugAnimationKey {
 
     @SubscribeEvent
     public static void onKeyboardInput(InputEvent.KeyInputEvent event) {
-        if (DEBUG_ANIMATION_KEY.isPressed()) {
+        if (KeyGuards.canTrigger(DEBUG_ANIMATION_KEY)) {
             DEBUG = !DEBUG;
             EntityPlayerSP player = Minecraft.getMinecraft().player;
             if (player == null) {

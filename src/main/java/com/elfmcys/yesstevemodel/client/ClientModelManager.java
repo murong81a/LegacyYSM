@@ -48,6 +48,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ClientModelManager {
     public static Map<ResourceLocation, List<ResourceLocation>> MODELS = Maps.newHashMap();
@@ -65,50 +67,139 @@ public class ClientModelManager {
      */
     public static volatile byte[] PASSWORD;
 
+    /**
+     * 已打印过的 warn 去重键（modelId + 阶段）。
+     * 同一个模型每次同步都会重新注册，不去重会把日志刷爆。
+     */
+    private static final Set<String> WARNED_KEYS = ConcurrentHashMap.newKeySet();
+    /** 已打印过 info 汇总的模型，保证每个模型只打一条汇总。 */
+    private static final Set<String> SUMMARY_KEYS = ConcurrentHashMap.newKeySet();
+    /** 本次同步中发生过部分失败的模型，供 registerAll 末尾汇总判断。 */
+    private static final Set<ResourceLocation> PARTIAL_FAILED = ConcurrentHashMap.newKeySet();
+
     public static void registerAll(ModelData data) {
         ResourceLocation modelId = new ResourceLocation(YesSteveModel.MOD_ID, data.getModelId());
         if (data.isAuth()) {
             AUTH_MODELS.add(data.getModelId());
         }
-        ClientModelManager.registerGeo(modelId, data.getModel());
-        ClientModelManager.registerAnimations(ModelIdUtil.getMainId(modelId), data.getAnimation());
-        ClientModelManager.registerTexture(modelId, data.getTexture());
+        int geoCount = 0;
+        int animationCount = 0;
+        int textureCount = 0;
+        boolean stepFailed = false;
+
+        // geo -> 动画 -> 贴图：三步互相隔离，任一步抛异常都不影响后续步骤
+        try {
+            geoCount = ClientModelManager.registerGeo(modelId, data.getModel());
+        } catch (Throwable t) {
+            stepFailed = true;
+            PARTIAL_FAILED.add(modelId);
+            YesSteveModel.LOGGER.error("YSM: 注册模型 {} 的 geo 失败（geo 部件 {} 个，贴图 {} 张，动画 {} 个）",
+                    modelId, sizeOf(data.getModel()), sizeOf(data.getTexture()), sizeOf(data.getAnimation()), t);
+        }
+
+        // registerAnimations 内部会 remove("arrow")，必须传可变拷贝；
+        // 否则遇到不可变 Map 会抛 UnsupportedOperationException，导致贴图步骤也被跳过。
+        try {
+            animationCount = ClientModelManager.registerAnimations(ModelIdUtil.getMainId(modelId),
+                    Maps.newHashMap(data.getAnimation()));
+        } catch (Throwable t) {
+            stepFailed = true;
+            PARTIAL_FAILED.add(modelId);
+            YesSteveModel.LOGGER.error("YSM: 注册模型 {} 的动画失败（动画文件 {} 个）",
+                    modelId, sizeOf(data.getAnimation()), t);
+        }
+
+        try {
+            textureCount = ClientModelManager.registerTexture(modelId, data.getTexture());
+        } catch (Throwable t) {
+            stepFailed = true;
+            PARTIAL_FAILED.add(modelId);
+            YesSteveModel.LOGGER.error("YSM: 注册模型 {} 的贴图失败（贴图 {} 张）",
+                    modelId, sizeOf(data.getTexture()), t);
+        }
+
+        boolean partial = stepFailed || PARTIAL_FAILED.remove(modelId);
+        // 每个模型只打一条汇总，避免重复同步时刷屏
+        if (SUMMARY_KEYS.add(modelId.toString())) {
+            YesSteveModel.LOGGER.info("YSM: 注册模型 {} 汇总：geo {} 个，贴图 {} 张，动画 {} 条，auth={}{}",
+                    modelId, geoCount, textureCount, animationCount, data.isAuth(),
+                    partial ? "，部分步骤失败（详见上方 YSM: error/warn）" : "");
+        }
     }
 
-    public static void registerGeo(ResourceLocation modelId, Map<String, byte[]> modelData) {
+    /**
+     * 注册模型的 geo 部件，并处理 info.json。
+     *
+     * @return 成功注册的 geo 部件数量
+     */
+    public static int registerGeo(ResourceLocation modelId, Map<String, byte[]> modelData) {
+        int count = 0;
         for (Map.Entry<String, byte[]> entry : modelData.entrySet()) {
             String partName = entry.getKey();
             if (FormatManager.INFO_NAME.equals(partName)) continue;
-            registerGeo(modelId, partName, entry.getValue());
+            if (registerGeo(modelId, partName, entry.getValue())) {
+                count++;
+            }
         }
         byte[] infoData = modelData.get(FormatManager.INFO_NAME);
-        if (infoData != null && ObjectStreamUtil.toObject(infoData) instanceof ExtraInfo extraInfo) {
-            addExtraInfo(modelId, extraInfo);
+        if (infoData != null) {
+            Object infoObj = ObjectStreamUtil.toObject(infoData);
+            if (infoObj instanceof ExtraInfo) {
+                addExtraInfo(modelId, (ExtraInfo) infoObj);
+            } else {
+                PARTIAL_FAILED.add(modelId);
+                warnOnce(modelId + ":info", "YSM: 模型 {} 的 info 反序列化失败（{} 字节，实际类型 {}），将缺少额外信息",
+                        modelId, infoData.length, typeOf(infoObj));
+            }
         }
+        return count;
     }
 
-    private static void registerGeo(ResourceLocation modelId, String partName, byte[] partData) {
+    /**
+     * @return 该 geo 部件是否注册成功
+     */
+    private static boolean registerGeo(ResourceLocation modelId, String partName, byte[] partData) {
         Map<ResourceLocation, GeoModel> geoModels = GeckoLibCache.getInstance().getGeoModels();
         try {
             Object obj = ObjectStreamUtil.toObject(partData);
-            if (obj instanceof RawGeoModel rawModel) {
-                if (rawModel.getFormatVersion() == FormatVersion.NEW) {
-                    RawGeometryTree rawGeometryTree = RawGeometryTree.parseHierarchy(rawModel);
-                    ResourceLocation partId = ModelIdUtil.getSubModelId(modelId, partName);
-                    GeoModel geoModel = GeoBuilder.getGeoBuilder().constructGeoModel(rawGeometryTree);
-                    if (FormatManager.MAIN_MODEL_NAME.equals(partName)) {
-                        SCALE_INFO.put(partId, Pair.of(rawGeometryTree.properties.getHeightScale(), rawGeometryTree.properties.getWidthScale()));
-                        addExtraInfo(modelId, rawGeometryTree.properties.getExtraInfo());
-                    }
-                    geoModels.put(partId, geoModel);
-                }
+            if (!(obj instanceof RawGeoModel)) {
+                PARTIAL_FAILED.add(modelId);
+                warnOnce(modelId + ":geo:" + partName + ":type",
+                        "YSM: 模型 {} 的 geo 部件 {} 反序列化失败（{} 字节，实际类型 {}），已跳过",
+                        modelId, partName, partData == null ? -1 : partData.length, typeOf(obj));
+                return false;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+            RawGeoModel rawModel = (RawGeoModel) obj;
+            if (rawModel.getFormatVersion() != FormatVersion.NEW) {
+                PARTIAL_FAILED.add(modelId);
+                warnOnce(modelId + ":geo:" + partName + ":version",
+                        "YSM: 模型 {} 的 geo 部件 {} 格式版本不是 NEW（实际 {}），已跳过",
+                        modelId, partName, rawModel.getFormatVersion());
+                return false;
+            }
+            RawGeometryTree rawGeometryTree = RawGeometryTree.parseHierarchy(rawModel);
+            ResourceLocation partId = ModelIdUtil.getSubModelId(modelId, partName);
+            GeoModel geoModel = GeoBuilder.getGeoBuilder().constructGeoModel(rawGeometryTree);
+            if (FormatManager.MAIN_MODEL_NAME.equals(partName)) {
+                SCALE_INFO.put(partId, Pair.of(rawGeometryTree.properties.getHeightScale(), rawGeometryTree.properties.getWidthScale()));
+                addExtraInfo(modelId, rawGeometryTree.properties.getExtraInfo());
+            }
+            geoModels.put(partId, geoModel);
+            return true;
+        } catch (Throwable t) {
+            PARTIAL_FAILED.add(modelId);
+            YesSteveModel.LOGGER.error("YSM: 注册模型 {} 的 geo 部件 {} 失败（{} 字节）",
+                    modelId, partName, partData == null ? -1 : partData.length, t);
+            return false;
         }
     }
 
-    public static void registerTexture(ResourceLocation modelId, Map<String, byte[]> mapData) {
+    /**
+     * 注册模型的贴图。
+     *
+     * @return 成功注册的贴图数量
+     */
+    public static int registerTexture(ResourceLocation modelId, Map<String, byte[]> mapData) {
         List<ResourceLocation> textures = Lists.newArrayList();
         for (String name : mapData.keySet()) {
             if (isModelTexture(ModelIdUtil.getInfoId(modelId), name)) {
@@ -117,29 +208,44 @@ public class ClientModelManager {
             }
         }
         MODELS.put(modelId, textures);
+        int count = 0;
         for (Map.Entry<String, byte[]> entry : mapData.entrySet()) {
             ResourceLocation textureId = ModelIdUtil.getSubModelId(modelId, entry.getKey());
-            registerTexture(textureId, entry.getValue());
+            if (registerTexture(modelId, textureId, entry.getValue())) {
+                count++;
+            }
         }
+        return count;
+    }
+
+    /**
+     * @return 该贴图是否注册成功
+     */
+    private static boolean registerTexture(ResourceLocation modelId, ResourceLocation textureId, byte[] data) {
+        if (data == null || data.length == 0) {
+            PARTIAL_FAILED.add(modelId);
+            warnOnce(modelId + ":tex:" + textureId,
+                    "YSM: 模型 {} 的贴图 {} 数据为空（{} 字节），该贴图将缺失",
+                    modelId, textureId, data == null ? -1 : data.length);
+            return false;
+        }
+        // 确保主线程上传
+        final Minecraft mc = Minecraft.getMinecraft();
+        // 已经在客户端主线程时直接上传，避免"先 bindTexture 未命中 -> 渲染成缺失贴图"的一帧闪烁
+        if ("Client thread".equals(Thread.currentThread().getName())) {
+            mc.getTextureManager().loadTexture(textureId, new OuterFileTexture(data));
+            return true;
+        }
+        mc.addScheduledTask(() -> {
+            mc.getTextureManager().loadTexture(textureId, new OuterFileTexture(data));
+        });
+        return true;
     }
 
     private static boolean isModelTexture(ResourceLocation infoId, String name) {
         if (name.equals(FormatManager.ARROW_TEXTURE_FILE_NAME)) return false;
         final ExtraInfo extraInfo = EXTRA_INFO.get(infoId);
         return extraInfo == null || (!name.equals(extraInfo.getGuiBackground()) && !name.equals(extraInfo.getGuiForeground()));
-    }
-
-    private static void registerTexture(ResourceLocation textureId, byte[] data) {
-        // 确保主线程上传
-        final Minecraft mc = Minecraft.getMinecraft();
-        // 已经在客户端主线程时直接上传，避免"先 bindTexture 未命中 -> 渲染成缺失贴图"的一帧闪烁
-        if ("Client thread".equals(Thread.currentThread().getName())) {
-            mc.getTextureManager().loadTexture(textureId, new OuterFileTexture(data));
-            return;
-        }
-        mc.addScheduledTask(() -> {
-            mc.getTextureManager().loadTexture(textureId, new OuterFileTexture(data));
-        });
     }
 
     /**
@@ -163,7 +269,10 @@ public class ClientModelManager {
         return textures.get(0);
     }
 
-    private static void registerAnimations(ResourceLocation mainId, Map<String, byte[]> mapData) {
+    /**
+     * @return 注册到主模型上的动画数量
+     */
+    private static int registerAnimations(ResourceLocation mainId, Map<String, byte[]> mapData) {
         Map<ResourceLocation, AnimationFile> animations = GeckoLibCache.getInstance().getAnimations();
 
         if (mapData.containsKey("arrow")) {
@@ -186,6 +295,7 @@ public class ClientModelManager {
         });
         main.animations().forEach((name, animation) -> ConditionManager.addTest(mainId, name));
         animations.put(mainId, main);
+        return main.animations().size();
     }
 
     private static AnimationFile getAnimationFile(String file) {
@@ -200,7 +310,8 @@ public class ClientModelManager {
                     animation = JsonAnimationUtils.deserializeJsonToAnimation(JsonAnimationUtils.getAnimation(jsonObject, animationName), parser);
                     animationFile.putAnimation(animationName, animation);
                 } catch (JsonException e) {
-                    e.printStackTrace();
+                    YesSteveModel.LOGGER.error("YSM: 解析动画 JSON 失败（动画名 {}，{} 字符）",
+                            animationName, file.length(), e);
                 }
             }
         }
@@ -221,7 +332,7 @@ public class ClientModelManager {
             try (FolderModelAccess access = new FolderModelAccess(defaultPath)) {
                 ModelData data = ServerModelManager.getModelData(access, "default", false, Type.FOLDER);
                 if (data == null) {
-                    YesSteveModel.LOGGER.warn("Failed to load default model.");
+                    YesSteveModel.LOGGER.warn("YSM: 加载默认模型失败（模型数据不完整），将缺少默认动画与贴图");
                     return;
                 }
                 data.getAnimation().forEach((name, bytes) -> {
@@ -231,11 +342,15 @@ public class ClientModelManager {
                 ClientModelManager.registerAll(data);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            YesSteveModel.LOGGER.error("YSM: 加载默认模型失败（{}）", ServerModelManager.BUILTIN.resolve("default"), e);
         }
     }
 
     public static void sendSyncModelMessage() {
+        // 新一轮同步：清空去重与部分失败标记，保证新问题能重新打印
+        WARNED_KEYS.clear();
+        SUMMARY_KEYS.clear();
+        PARTIAL_FAILED.clear();
         MODELS.clear();
         CACHE_MD5.clear();
         AUTH_MODELS.clear();
@@ -259,6 +374,23 @@ public class ClientModelManager {
                 YesSteveModel.LOGGER.error("YSM: 发送模型同步请求失败", e);
             }
         });
+    }
+
+    /**
+     * 同一个 key 只打印一次 warn，避免每次同步重复刷屏。
+     */
+    private static void warnOnce(String key, String format, Object... args) {
+        if (WARNED_KEYS.add(key)) {
+            YesSteveModel.LOGGER.warn(format, args);
+        }
+    }
+
+    private static int sizeOf(Map<String, byte[]> map) {
+        return map == null ? 0 : map.size();
+    }
+
+    private static String typeOf(Object obj) {
+        return obj == null ? "null" : obj.getClass().getName();
     }
 
     private static String[] getMd5Info() {

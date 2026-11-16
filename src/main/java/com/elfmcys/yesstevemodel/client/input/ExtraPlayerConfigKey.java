@@ -24,7 +24,7 @@ public class ExtraPlayerConfigKey {
 
     @SubscribeEvent
     public static void onKeyboardInput(InputEvent.KeyInputEvent event) {
-        if (EXTRA_PLAYER_RENDER_KEY.isPressed()) {
+        if (KeyGuards.canTrigger(EXTRA_PLAYER_RENDER_KEY)) {
             Minecraft.getMinecraft().displayGuiScreen(new ExtraPlayerConfigScreen());
         }
     }
