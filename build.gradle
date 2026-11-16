@@ -4,6 +4,7 @@ buildscript {
         maven { url = 'https://mirrors.ustc.edu.cn/bmclapi/' }
         maven { url = 'https://maven.aliyun.com/repository/public' }
         maven { url = 'https://libraries.minecraft.net' }
+        mavenCentral()
     }
     dependencies {
         classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
@@ -34,9 +35,14 @@ repositories {
     maven { url = 'https://libraries.minecraft.net' }
     // The standalone Mixin jar is also the annotation processor (Mixin AP).
     maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+    mavenCentral()
 }
 
-def jabelHome = file('D:/MuRong/cwsgi12313/MRPlus/_tmp/ysm/env/jabel')
+// Jabel is pulled from Maven Central (also proxied by the aliyun mirror above):
+// CI has no local env/ directory. Same coordinates as env/jabel/*.jar locally.
+def jabelVersion = '1.0.0'
+def byteBuddyVersion = '1.12.18'
+def jnaVersion = '5.12.1'
 
 // Mixin AP output. Keep the name in sync with "refmap" in the Mixin configs.
 def mixinRefmap = file("$buildDir/classes/java/main/mixins.yes_steve_model.refmap.json")
@@ -52,10 +58,10 @@ dependencies {
     // Jabel turns the Java 16+ syntax used by the sources into Java 8 bytecode.
     // The javac plugin itself must also be on the compilation classpath because
     // the sources import com.github.bsideup.jabel.Desugar.
-    compileOnly files("$jabelHome/jabel-javac-plugin-1.0.0.jar",
-            "$jabelHome/byte-buddy-1.12.18.jar",
-            "$jabelHome/byte-buddy-agent-1.12.18.jar",
-            "$jabelHome/jna-5.12.1.jar")
+    compileOnly "com.github.bsideup.jabel:jabel-javac-plugin:$jabelVersion"
+    compileOnly "net.bytebuddy:byte-buddy:$byteBuddyVersion"
+    compileOnly "net.bytebuddy:byte-buddy-agent:$byteBuddyVersion"
+    compileOnly "net.java.dev.jna:jna:$jnaVersion"
 
     // MixinBooter ships the Mixin runtime (CleanMix fork) plus
     // zone.rong.mixinbooter.IEarlyMixinLoader for MC 1.8 - 1.12.2.
@@ -84,10 +90,10 @@ dependencies {
     mixinAP 'org.ow2.asm:asm-util:9.1'
     // javac resolves -Xplugin:jabel through the processor path once
     // annotationProcessorPath is set explicitly.
-    mixinAP files("$jabelHome/jabel-javac-plugin-1.0.0.jar",
-            "$jabelHome/byte-buddy-1.12.18.jar",
-            "$jabelHome/byte-buddy-agent-1.12.18.jar",
-            "$jabelHome/jna-5.12.1.jar")
+    mixinAP "com.github.bsideup.jabel:jabel-javac-plugin:$jabelVersion"
+    mixinAP "net.bytebuddy:byte-buddy:$byteBuddyVersion"
+    mixinAP "net.bytebuddy:byte-buddy-agent:$byteBuddyVersion"
+    mixinAP "net.java.dev.jna:jna:$jnaVersion"
 }
 
 processResources {
@@ -121,8 +127,11 @@ compileJava {
     options.compilerArgs += ['-Xmaxerrs', '10000', '-Xlint:-options', '-Xplugin:jabel']
     // Gradle itself runs on JDK 8 (ForgeGradle 2.3 limitation), but the sources
     // need a JDK 17 parser. Jabel makes it emit Java 8 (major 52) bytecode.
+    // CI sets JAVAC17 to the JDK 17 javac it installed; locally we fall back to
+    // the pinned zulu build used so far.
     options.fork = true
-    options.forkOptions.executable = 'D:/JAVA/zulu-jdk17.0.21.0.3/bin/javac.exe'
+    options.forkOptions.executable = System.getenv('JAVAC17') ?:
+            'D:/JAVA/zulu-jdk17.0.21.0.3/bin/javac.exe'
 
     // Generate the production SRG refmap at compile time. The AP sees the
     // deobfuscated (MCP/SRG-named) sources and writes the obfuscated names into

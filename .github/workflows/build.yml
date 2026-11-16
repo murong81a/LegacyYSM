@@ -1,0 +1,107 @@
+name: build
+
+on:
+  push:
+    branches: [1.10.2-forge]
+    tags: ['v*']
+  pull_request:
+    branches: [1.10.2-forge]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Keep every Gradle/ForgeGradle download inside the workspace so the cache
+  # step below can pick it up (MCP stable_29 + Forge userdev live here).
+  GRADLE_USER_HOME: ${{ github.workspace }}/.gradle-home
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      # Order matters: the last setup-java call wins JAVA_HOME, and Gradle /
+      # ForgeGradle 2.3 only run on 8. JDK 17 is kept in JAVA_HOME_17_X64.
+      - name: Set up JDK 17 (javac parser, Jabel emits Java 8 bytecode)
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: '17'
+
+      - name: Set up JDK 8 (Gradle / ForgeGradle 2.3 runtime)
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: '8'
+
+      - name: Point the forked javac at JDK 17
+        run: echo "JAVAC17=$JAVA_HOME_17_X64/bin/javac" >> "$GITHUB_ENV"
+
+      # Gradle 4.10.3 is the last 4.x line that ForgeGradle 2.3 supports.
+      - name: Install Gradle 4.10.3
+        run: |
+          curl -sSLo "$RUNNER_TEMP/gradle.zip" \
+            https://services.gradle.org/distributions/gradle-4.10.3-bin.zip
+          unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TOOL_CACHE"
+          echo "$RUNNER_TOOL_CACHE/gradle-4.10.3/bin" >> "$GITHUB_PATH"
+
+      - name: Cache Gradle and ForgeGradle caches
+        uses: actions/cache@v4
+        with:
+          path: .gradle-home/caches
+          key: fg-${{ runner.os }}-${{ hashFiles('build.gradle') }}
+          restore-keys: |
+            fg-${{ runner.os }}-
+
+      - name: Prepare workspace (downloads MCP stable_29 / Forge userdev)
+        run: gradle setupCIWorkspace --no-daemon --console=plain
+
+      # build.gradle fails the build itself when the Mixin refmap is missing or
+      # empty; this step additionally proves the jar still carries the files FML
+      # needs (coremod manifest is checked below by unzip).
+      - name: Build
+        run: gradle build --no-daemon --console=plain
+
+      - name: Verify jar contents
+        run: |
+          set -eu
+          jar=$(ls build/libs/*.jar | head -n 1)
+          echo "jar: $jar"
+          unzip -l "$jar" | grep -q 'mixins.yes_steve_model.refmap.json'
+          unzip -l "$jar" | grep -q 'META-INF/yes_steve_model_at.cfg'
+          unzip -l "$jar" | grep -q 'mcmod.info'
+          unzip -p "$jar" mixins.yes_steve_model.refmap.json |
+            python3 -c 'import json,sys; d=json.load(sys.stdin); assert d.get("mappings"), "refmap has no mappings"'
+          unzip -p "$jar" META-INF/MANIFEST.MF | grep -q 'FMLCorePlugin'
+          echo "jar checks passed"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: yesstevemodel-1.10.2
+          path: build/libs/*.jar
+          if-no-files-found: error
+          retention-days: 14
+
+  # Tag pushes (v1.2.0 etc.) publish the jar as a GitHub Release.
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: yesstevemodel-1.10.2
+          path: dist
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.jar
+          generate_release_notes: true
