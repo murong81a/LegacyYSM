@@ -48,7 +48,6 @@ gradle clean build --no-daemon
 - 必须 `clean build`：增量编译时注解处理器不会再跑一遍，Mixin refmap 会变空，产物在正式环境失效
 - JDK 17 的 `javac` 路径可用 `JAVAC17` 环境变量指定
 - 产物：`build/libs/yesstevemodel-1.10.2-*.jar`
-- 推 `v*` 标签会由 GitHub Actions 构建并发布 Release
 
 ## 运行依赖
 
