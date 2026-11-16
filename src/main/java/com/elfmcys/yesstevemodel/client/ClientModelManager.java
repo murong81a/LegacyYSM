@@ -233,11 +233,11 @@ public class ClientModelManager {
         final Minecraft mc = Minecraft.getMinecraft();
         // 已经在客户端主线程时直接上传，避免"先 bindTexture 未命中 -> 渲染成缺失贴图"的一帧闪烁
         if ("Client thread".equals(Thread.currentThread().getName())) {
-            mc.getTextureManager().loadTexture(textureId, new OuterFileTexture(data));
+            mc.getTextureManager().loadTexture(textureId, new OuterFileTexture(data, textureId.toString()));
             return true;
         }
         mc.addScheduledTask(() -> {
-            mc.getTextureManager().loadTexture(textureId, new OuterFileTexture(data));
+            mc.getTextureManager().loadTexture(textureId, new OuterFileTexture(data, textureId.toString()));
         });
         return true;
     }
