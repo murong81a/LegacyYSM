@@ -24,6 +24,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public final class AnimationManager {
+    /// 作者用来把装饰骨骼 scale 归零的动画名（xilian / mini_elysia 等都叫这个）
+    private static final String ELEMENT_HIDDEN_ANIMATION = "隐藏";
     //private final static String TAC_ID = "tac";
     private static AnimationManager MANAGER;
     @SuppressWarnings("unchecked")
@@ -287,6 +289,34 @@ public final class AnimationManager {
             return playAnimation(event, defaultName, ILoopType.EDefaultLoopTypes.LOOP);
         }
         return PlayState.STOP;
+    }
+
+    /**
+     * 元素层：常驻播放作者的“隐藏”动画（把装饰骨骼的 scale 压成 0）。
+     * <p>
+     * 新版模型把挂件（刀/弓/背景板/爱心）当成常驻装饰，靠额外动画里一个
+     * {@code 隐藏} 动画把它们 scale 归零，该动画只写 scale。我们的状态机不认识它，
+     * 于是这些装饰在世界里永远显示——典型表现是模型背后顶着一块巨大的粉色/蓝色平面
+     * （例如 昔涟 的 56×56 背景板、爱莉希雅的挂件）。
+     * <p>
+     * 走 {@code parallel_} 前缀的控制器即可叠加播放（{@code AnimationProcessor} 对
+     * 这类控制器走累加分支），不需要改渲染；模型没有该动画时直接 STOP。
+     */
+    @Nonnull
+    public PlayState predicateElement(AnimationEvent<?> event) {
+        if (Minecraft.getMinecraft().isGamePaused()) {
+            return PlayState.CONTINUE;
+        }
+        ResourceLocation animation = event.getAnimatableEntity().getAnimationFileLocation();
+        if (animation == null) {
+            return PlayState.STOP;
+        }
+        com.elfmcys.yesstevemodel.geckolib3.file.AnimationFile file =
+                GeckoLibCache.getInstance().getAnimations().get(animation);
+        if (file == null || file.animations() == null || !file.animations().containsKey(ELEMENT_HIDDEN_ANIMATION)) {
+            return PlayState.STOP;
+        }
+        return playLoopAnimation(event, ELEMENT_HIDDEN_ANIMATION);
     }
 
     @Nullable

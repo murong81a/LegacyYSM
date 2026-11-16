@@ -74,6 +74,9 @@ public class CustomPlayerEntity extends AnimatableEntity<EntityPlayer> {
             }
         }
         this.addAnimationController(new AnimationController<>(this, "cap_controller", 2, manager::predicateCap));
+        // 元素层：播放作者的“隐藏”动画，压掉常驻装饰（背景板/挂件）。名字必须含 parallel_ 前缀，
+        // 这样 AnimationProcessor 会走叠加分支，不会覆盖主动画。
+        this.addAnimationController(new AnimationController<>(this, "parallel_element_controller", 0, manager::predicateElement));
     }
 
     @Override
